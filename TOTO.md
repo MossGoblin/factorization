@@ -1,0 +1,3 @@
+- [ ] find a methodical way of splitting orders
+- [ ] automate order coloring
+- [x] add slope to Number()

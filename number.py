@@ -11,6 +11,7 @@ class Number():
             self.prime_factors = []
             self.prime_mean = 0
             self.mean_deviation = 0
+            self.slope = 0
         else:
             self.prime_factors = []
             if self.is_prime:
@@ -20,5 +21,9 @@ class Number():
             self.prime_mean = lab.get_prime_mean(self.prime_factors)
             self.mean_deviation = lab.get_mean_deviation(
                 self.prime_factors, self.prime_mean)
-        
+            if self.mean_deviation > 0:
+                self.slope = self.value / self.mean_deviation
+            else:
+                self.slope = 0
+
         self.first_row = False

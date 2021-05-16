@@ -43,6 +43,7 @@ def create_visualization(number_list: List[Number]):
     data_dict['prime_factors'] = []
     data_dict['mean'] = []
     data_dict['deviation'] = []
+    data_dict['slope'] = []
     data_dict['first_row'] = []
     for number in number_list:
         data_dict['number'].append(number.value)
@@ -50,6 +51,7 @@ def create_visualization(number_list: List[Number]):
         data_dict['prime_factors'].append(number.prime_factors)
         data_dict['mean'].append(number.prime_mean)
         data_dict['deviation'].append(number.mean_deviation)
+        data_dict['slope'].append(number.slope)
         data_dict['first_row'].append('true' if number.first_row else 'false')
 
     data_df = pd.DataFrame(data_dict)
@@ -68,7 +70,8 @@ def create_visualization(number_list: List[Number]):
                                        ('prime', '@is_prime'),
                                        ('factors', '@prime_factors'),
                                        ('mean factor value', '@mean'),
-                                       ('mean factor deviation', '@deviation')])
+                                       ('mean factor deviation', '@deviation'),
+                                       ('slope', '@slope')])
     graph.add_tools(hover)
 
     # [] colorize by type
