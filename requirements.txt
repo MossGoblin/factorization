@@ -1,0 +1,6 @@
+autopep8==1.5.7
+certifi==2020.12.5
+pycodestyle==2.7.0
+pyprimes==0.1
+toml==0.10.2
+wincertstore==0.2
