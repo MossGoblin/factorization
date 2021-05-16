@@ -29,15 +29,14 @@ def run(lowerbound=2, upperbound=10):
             number.first_row = True
             running_maximum_deviation = deviation
 
-    # [...] craete visualization
+    # [...] create visualization
     create_visualization(number_list)
-    pass
 
 
 def create_visualization(number_list: List[Number]):
     # [ ] prep vis data
     # prep x-axis and y-axix
-    data_dict = {}    
+    data_dict = {}
     data_dict['number'] = []
     data_dict['is_prime'] = []
     data_dict['prime_factors'] = []
@@ -64,7 +63,6 @@ def create_visualization(number_list: List[Number]):
     graph = figure(title=f"Mean prime factor deviations for numbers {data_dict['number'][0]} to {data_dict['number'][-1]}",
                    x_axis_label='number', y_axis_label='mean prime factor deviation', width=plot_width, height=plot_height)
 
-
     # [...] add hover tool
     hover = models.HoverTool(tooltips=[('number', '@number'),
                                        ('prime', '@is_prime'),
@@ -80,22 +78,22 @@ def create_visualization(number_list: List[Number]):
     first_row_color = config.get('graph', 'first_row_color')
     unmarked_color = config.get('graph', 'unmarked_color')
     color_mapper = CategoricalColorMapper(factors=['true', 'false'], palette=[first_row_color, unmarked_color]
-    )
+                                          )
 
     # [x] add graph
     # graph.scatter(source=data, x='number', y='deviation', color="#386CB0", size=5)
-    graph.scatter(source=data, x='number', y='deviation', color={'field': 'first_row', 'transform': color_mapper}, size=5)
+    graph.scatter(source=data, x='number', y='deviation', color={
+                  'field': 'first_row', 'transform': color_mapper}, size=5)
 
     # [x] show
     show(graph)
 
-    pass
 
-def int_list_to_str(number_list: List[int], separator = ', '):
+def int_list_to_str(number_list: List[int], separator=', '):
     stringified_list = []
     for number in number_list:
         stringified_list.append(str(number))
-    
+
     return separator.join(stringified_list)
 
 
