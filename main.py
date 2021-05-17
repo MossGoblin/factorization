@@ -2,7 +2,7 @@ from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis
+from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
 from datetime import datetime
 import logging
 import math
@@ -11,7 +11,6 @@ from typing import List, Dict, Tuple
 import pandas as pd
 
 from number import Number
-import mappings as maps
 
 # create logger
 logger = logging.getLogger(__name__)
@@ -57,11 +56,12 @@ def run(lowerbound=2, upperbound=10):
     #         number.first_row = True
     #         running_maximum_deviation = deviation
 
-
     # [...] create visualization
     create_visualization(number_list)
 
 # OBS
+
+
 def assign_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
     number_of_unassigned_buckets = len(sorted_buckets_list)
     number_of_binary_buckets = get_previous_power_of_two(
@@ -153,8 +153,8 @@ def get_slope_buckets(number_list: List) -> Tuple:
 
 def create_visualization(number_list: List[Number]):
 
-    use_bucket_colorization = True if config.get('run', 'use_color_buckets') == 'true' else False
-
+    use_bucket_colorization = True if config.get(
+        'run', 'use_color_buckets') == 'true' else False
 
     if use_bucket_colorization:
         # [x] separate numbers into binary buckets by closest integer to number.slope
@@ -162,8 +162,8 @@ def create_visualization(number_list: List[Number]):
         buckets_list, slope_buckets = get_slope_buckets(number_list)
 
         # [x] pour numbers into binary buckets
-        binary_buckets = get_binary_buckets(sorted(buckets_list), slope_buckets)
-
+        binary_buckets = get_binary_buckets(
+            sorted(buckets_list), slope_buckets)
 
     # [...] prep visualization data
     data_dict = {}
@@ -189,7 +189,8 @@ def create_visualization(number_list: List[Number]):
         data_dict['deviation'].append(number.mean_deviation)
         data_dict['slope'].append(number.slope)
         if use_bucket_colorization:
-            data_dict['color_bucket'].append(get_bucket_index(binary_buckets, number.value))
+            data_dict['color_bucket'].append(
+                get_bucket_index(binary_buckets, number.value))
 
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
@@ -225,25 +226,25 @@ def create_visualization(number_list: List[Number]):
                                        ('slope', '@slope')])
     graph.add_tools(hover)
 
-    # [...] colorize by type
-    # prime_color = config.get('graph', 'prime_color')
-    # composite_color = config.get('graph', 'composite_color')
-    # first_row_color = config.get('graph', 'first_row_color')
-    # unmarked_color = config.get('graph', 'unmarked_color')
-    # color_mapper = CategoricalColorMapper(factors=['true', 'false'], palette=[first_row_color, unmarked_color])
-
     # [x] add graph
     if use_bucket_colorization:
         number_of_colors = len(binary_buckets)
         factors_list = get_factors(number_of_colors)
-        color_mapper = CategoricalColorMapper(factors=factors_list, palette=Magma[number_of_colors])
-        graph.scatter(source=data, x='number', y='deviation', color={'field': 'color_bucket', 'transform': color_mapper}, size=5)
+        color_mapper = CategoricalColorMapper(
+            factors=factors_list, palette=Turbo[number_of_colors])
+        graph.scatter(source=data, x='number', y='deviation', color={
+                      'field': 'color_bucket', 'transform': color_mapper}, size=5)
+        logger.info(f'{number_of_colors} color buckets created')
     else:
         base_color = config.get('graph', 'base_color')
-        graph.scatter(source=data, x='number', y='deviation', color=base_color, size=5)
+        graph.scatter(source=data, x='number', y='deviation',
+                      color=base_color, size=5)
+        logger.info('Base coloring')
 
     # [x] show
+    logger.info('Graph generated')
     show(graph)
+
 
 def get_factors(number_of_colors: int) -> List:
     factors_list = []
@@ -258,6 +259,7 @@ def get_bucket_index(binary_buckets: Dict, value: int) -> int:
         for number in numbers:
             if value == number.value:
                 return str(index)
+
 
 def generate_timestamp():
     # '%d%m%Y_%H%M%S'
