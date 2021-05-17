@@ -2,10 +2,24 @@ from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
+import logging
 from typing import List
 import pandas as pd
 
 from number import Number
+
+# create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+# create console handler and set level to debug
+ch = logging.StreamHandler()
+# create formatter
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+# add formatter to ch
+ch.setFormatter(formatter)
+# add ch to logger
+logger.addHandler(ch)
 
 
 config = ConfigParser()
@@ -20,6 +34,7 @@ def run(lowerbound=2, upperbound=10):
     # [x] iterate between bounds and cache numbers
     number_list = generate_number_list(
         lowerbound=lowerbound, upperbound=upperbound)
+    logger.info(f'Numbers generated {lowerbound}..{upperbound}')
 
     # [...] split data
     running_maximum_deviation = 0
