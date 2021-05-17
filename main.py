@@ -4,10 +4,11 @@ from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
 from datetime import datetime
 import logging
-from typing import List
+from typing import List, Dict, Tuple
 import pandas as pd
 
 from number import Number
+import mappings as maps
 
 # create logger
 logger = logging.getLogger(__name__)
@@ -31,7 +32,12 @@ lowerbound = int(config.get('range', 'lowerbound'))
 upperbound = int(config.get('range', 'upperbound'))
 
 
+include_primes = False
+
 def run(lowerbound=2, upperbound=10):
+    global include_primes
+    include_primes = True if config.get('run', 'include_primes') == 'True' else False
+
     # [x] iterate between bounds and cache numbers
     number_list = generate_number_list(
         lowerbound=lowerbound, upperbound=upperbound)
@@ -45,8 +51,40 @@ def run(lowerbound=2, upperbound=10):
             number.first_row = True
             running_maximum_deviation = deviation
 
+    # [...] separate numbers in buckets by closes integer to number slope
+    # [x] get slope buckets
+    buckets_list, slope_buckets = get_slope_buckets(number_list)
+
+    # [ ] create color mapping
+    # binary split from larger slope to smaller
+    larger_split = calculate_larger_compound_bucket_size(len(buckets_list))
+
     # [...] create visualization
     create_visualization(number_list)
+
+
+def calculate_larger_compound_bucket_size(number_of_buckets: int) -> int:
+    
+    pass
+
+def get_slope_buckets(number_list: List) -> Tuple:
+    buckets_list = []
+    slope_buckets = {}
+    # slope_buckets = {
+    #     'bucket': int,
+    #     'numbers': List[Number]
+    # }
+    for number in number_list:
+        if number.is_prime and not include_primes:
+            continue
+        else:
+            slope_int = round(number.slope)
+            if slope_int not in buckets_list:
+                buckets_list.append(slope_int)
+                slope_buckets[slope_int] = []
+            slope_buckets[slope_int].append(number)
+
+    return buckets_list, slope_buckets
 
 
 def create_visualization(number_list: List[Number]):
@@ -54,22 +92,24 @@ def create_visualization(number_list: List[Number]):
     # prep x-axis and y-axix
     data_dict = {}
     data_dict['number'] = []
-    # data_dict['is_prime'] = []
+    if include_primes:
+        data_dict['is_prime'] = []
     data_dict['prime_factors'] = []
     data_dict['mean'] = []
     data_dict['deviation'] = []
     data_dict['slope'] = []
-    data_dict['first_row'] = []
+    # data_dict['first_row'] = [] # OBS
     for number in number_list:
         if number.is_prime:
             continue
         data_dict['number'].append(number.value)
-        # data_dict['is_prime'].append('true' if number.is_prime else 'false')
+        if include_primes:
+            data_dict['is_prime'].append('true' if number.is_prime else 'false')
         data_dict['prime_factors'].append(int_list_to_str(number.prime_factors))
         data_dict['mean'].append(number.prime_mean)
         data_dict['deviation'].append(number.mean_deviation)
         data_dict['slope'].append(number.slope)
-        data_dict['first_row'].append('true' if number.first_row else 'false')
+        # data_dict['first_row'].append('true' if number.first_row else 'false')
 
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
@@ -78,11 +118,13 @@ def create_visualization(number_list: List[Number]):
 
 
     # [x] 'hard copy'
-    timestamp_format = generate_timestamp()
-    timestamp = datetime.utcnow().strftime(timestamp_format)
-    hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + '_' + 'data' + '_' + timestamp + '.csv'
-    data_df.to_csv(hard_copy_filename)
-    logger.info(f'Saved data as {hard_copy_filename}')
+    if config.get('run', 'crate_csv'):
+        timestamp_format = generate_timestamp()
+        timestamp = datetime.utcnow().strftime(timestamp_format)
+        primes_included = 'primes_' if include_primes else 'no_primes_'
+        hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + '_' + primes_included + '_' + timestamp + '.csv'
+        data_df.to_csv(hard_copy_filename)
+        logger.info(f'Saved data as {hard_copy_filename}')
 
     # [x] create plot
     plot_width = int(config.get('graph', 'width'))
@@ -99,18 +141,16 @@ def create_visualization(number_list: List[Number]):
                                        ('slope', '@slope')])
     graph.add_tools(hover)
 
-    # [] colorize by type
-    prime_color = config.get('graph', 'prime_color')
-    composite_color = config.get('graph', 'composite_color')
-    first_row_color = config.get('graph', 'first_row_color')
-    unmarked_color = config.get('graph', 'unmarked_color')
-    color_mapper = CategoricalColorMapper(factors=['true', 'false'], palette=[first_row_color, unmarked_color]
-                                          )
+    # [...] colorize by type
+    # prime_color = config.get('graph', 'prime_color')
+    # composite_color = config.get('graph', 'composite_color')
+    # first_row_color = config.get('graph', 'first_row_color')
+    # unmarked_color = config.get('graph', 'unmarked_color')
+    # color_mapper = CategoricalColorMapper(factors=['true', 'false'], palette=[first_row_color, unmarked_color])
 
     # [x] add graph
-    # graph.scatter(source=data, x='number', y='deviation', color="#386CB0", size=5)
-    graph.scatter(source=data, x='number', y='deviation', color={
-                  'field': 'first_row', 'transform': color_mapper}, size=5)
+    graph.scatter(source=data, x='number', y='deviation', color="#386CB0", size=5)
+    # graph.scatter(source=data, x='number', y='deviation', color={'field': 'first_row', 'transform': color_mapper}, size=5)
 
     # [x] show
     show(graph)
