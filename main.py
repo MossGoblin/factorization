@@ -4,6 +4,7 @@ from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
 from datetime import datetime
 import logging
+import math
 from typing import List, Dict, Tuple
 import pandas as pd
 
@@ -55,25 +56,55 @@ def run(lowerbound=2, upperbound=10):
     # [x] get slope buckets
     buckets_list, slope_buckets = get_slope_buckets(number_list)
 
-    # [ ] create color mapping
-    # binary split from larger slope to smaller
-    larger_split = calculate_larger_compound_bucket_size(len(buckets_list))
+    # [x] split numbers into buinary buckets
+    binary_buckets = get_binary_buckets(sorted(buckets_list), slope_buckets)
+
+    # [...] create color mapping
+    # [ ] create color gradient with number of steps equal to the number of binary buckets
 
     # [...] create visualization
     create_visualization(number_list)
 
 
-def calculate_larger_compound_bucket_size(number_of_buckets: int) -> int:
-    
-    pass
+def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
+    binary_slope_buckets = {}
+    number_of_unassigned_buckets = len(sorted_buckets_list)
+    number_of_binary_buckets = get_previous_power_of_two(number_of_unassigned_buckets)
+
+    # create binary bucket index map
+    binary_bucket_index_map = {}
+    binary_slope_buckets = {}
+    for counter in range(number_of_binary_buckets + 1):
+        binary_bucket_index = number_of_binary_buckets - counter
+        binary_bucket_index_map[binary_bucket_index] = []
+        binary_slope_buckets[binary_bucket_index] = []
+        cutoff = math.floor(len(sorted_buckets_list)/2)
+        binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[cutoff:])
+        sorted_buckets_list = sorted_buckets_list[:cutoff]
+
+    # distribute numbers in the binary buckets according to slope
+    for number in slope_buckets.items():
+        binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
+        binary_slope_buckets[binary_bucket_index].extend(number[1])
+
+    return binary_slope_buckets
+
+def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
+    for bucket_index, slope_list in binary_bucket_index_map.items():
+        if slope in slope_list:
+            return bucket_index
+
+def get_previous_power_of_two(number: int):
+    running_product = 1
+    counter = 0
+    while running_product < number:
+        running_product = running_product * 2
+        counter = counter + 1
+    return counter - 1
 
 def get_slope_buckets(number_list: List) -> Tuple:
     buckets_list = []
     slope_buckets = {}
-    # slope_buckets = {
-    #     'bucket': int,
-    #     'numbers': List[Number]
-    # }
     for number in number_list:
         if number.is_prime and not include_primes:
             continue
