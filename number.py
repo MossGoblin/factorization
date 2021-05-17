@@ -25,5 +25,3 @@ class Number():
                 self.slope = self.value / self.mean_deviation
             else:
                 self.slope = 0
-
-        self.first_row = False
