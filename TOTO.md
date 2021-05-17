@@ -1,8 +1,10 @@
-- [ ] find a methodical way of splitting orders
-  - [ ] by number and magnitude of smallest prime factors
-  - [ ] automate order coloring
-- [x] add slope to Number()
+- [x] find a methodical way of splitting orders
+  - [x] by antislope
+  - [x] automate order coloring
+- [x] add antislope to Number()
 - [x] add logger
 - [x] add .csv output
 - [ ] documentation
   - [ ] full comments for .ini
+- [ ] find out the max colors from palette
+- [ ] find if anything can be gathered by slope

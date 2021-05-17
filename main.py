@@ -2,7 +2,7 @@ from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
+from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Greys256
 from datetime import datetime
 import logging
 import math
@@ -38,6 +38,7 @@ include_primes = False
 
 
 def run(lowerbound=2, upperbound=10):
+    logger.info('start')
     global include_primes
     include_primes = True if config.get(
         'run', 'include_primes') == 'True' else False
@@ -47,19 +48,8 @@ def run(lowerbound=2, upperbound=10):
         lowerbound=lowerbound, upperbound=upperbound)
     logger.info(f'Numbers generated {lowerbound}..{upperbound}')
 
-    # [...] split data
-    # OBS
-    # running_maximum_deviation = 0
-    # for number in number_list:
-    #     deviation = number.mean_deviation
-    #     if deviation > running_maximum_deviation:
-    #         number.first_row = True
-    #         running_maximum_deviation = deviation
-
     # [...] create visualization
     create_visualization(number_list)
-
-# OBS
 
 
 def assign_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
@@ -173,7 +163,7 @@ def create_visualization(number_list: List[Number]):
     data_dict['prime_factors'] = []
     data_dict['mean'] = []
     data_dict['deviation'] = []
-    data_dict['slope'] = []
+    data_dict['one_over_slope'] = []
     if use_bucket_colorization:
         data_dict['color_bucket'] = []
     for number in number_list:
@@ -187,7 +177,7 @@ def create_visualization(number_list: List[Number]):
             int_list_to_str(number.prime_factors))
         data_dict['mean'].append(number.prime_mean)
         data_dict['deviation'].append(number.mean_deviation)
-        data_dict['slope'].append(number.slope)
+        data_dict['one_over_slope'].append(number.slope)
         if use_bucket_colorization:
             data_dict['color_bucket'].append(
                 get_bucket_index(binary_buckets, number.value))
@@ -223,7 +213,7 @@ def create_visualization(number_list: List[Number]):
                                        ('factors', '@prime_factors'),
                                        ('mean factor value', '@mean'),
                                        ('mean factor deviation', '@deviation'),
-                                       ('slope', '@slope')])
+                                       ('anti-slope', '@one_over_slope')])
     graph.add_tools(hover)
 
     # [x] add graph
@@ -231,15 +221,15 @@ def create_visualization(number_list: List[Number]):
         number_of_colors = len(binary_buckets)
         factors_list = get_factors(number_of_colors)
         color_mapper = CategoricalColorMapper(
-            factors=factors_list, palette=Turbo[number_of_colors])
+            factors=factors_list, palette=Magma[number_of_colors])
+        logger.info(f'{number_of_colors} color buckets created')
         graph.scatter(source=data, x='number', y='deviation', color={
                       'field': 'color_bucket', 'transform': color_mapper}, size=5)
-        logger.info(f'{number_of_colors} color buckets created')
     else:
         base_color = config.get('graph', 'base_color')
+        logger.info('Base coloring')
         graph.scatter(source=data, x='number', y='deviation',
                       color=base_color, size=5)
-        logger.info('Base coloring')
 
     # [x] show
     logger.info('Graph generated')
