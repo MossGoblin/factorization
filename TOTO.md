@@ -1,4 +1,8 @@
 - [ ] find a methodical way of splitting orders
-- [ ] automate order coloring
+  - [ ] by number and magnitude of smallest prime factors
+  - [ ] automate order coloring
 - [x] add slope to Number()
 - [x] add logger
+- [x] add .csv output
+- [ ] documentation
+  - [ ] full comments for .ini
