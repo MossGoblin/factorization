@@ -209,14 +209,14 @@ def create_visualization(number_list: List[Number]):
 
     # [x] add graph
     number_of_colors = len(binary_buckets)
-    grapg_point_size = int(config.get('graph', 'point_size'))
+    graph_point_size = int(config.get('graph', 'point_size'))
     if use_bucket_colorization and number_of_colors <= 11:
         factors_list = get_factors(number_of_colors)
         color_mapper = CategoricalColorMapper(
             factors=factors_list, palette=Turbo[number_of_colors])
         logger.info(f'{number_of_colors} color buckets created')
         graph.scatter(source=data, x='number', y='deviation', color={
-                      'field': 'color_bucket', 'transform': color_mapper}, size=grapg_point_size)
+                      'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
     else:
         base_color = '#3030ff'
         logger.info('Base coloring')
@@ -228,6 +228,8 @@ def create_visualization(number_list: List[Number]):
     show(graph)
 
 def prep_output_folder(folder_name: str):
+    ''' Prepare folder for output csv files '''
+
     if not os.path.exists(folder_name):
             os.mkdir(folder_name)
             return
