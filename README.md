@@ -14,7 +14,7 @@ Example:
 Each of the factorizations represents an n-dimentional cube, where n is the number of factors in that particular factorization. Each  n-cube for the same composite number can be said to have the same volume (in this example 12) and can also be assigned value for surface.
 
 Let's have a look only at the prime factorizations of composite objects - in this case 2 x 2 x 3.
-This object has volume of 12 and a surface of 26.
+This object has volume of 12 and a surface of 34.
 
 Consider blowing up a non-elastic baloon. Blowing up a rigid airtight membrane is a process of trying to make it encompass as larger volume as possible, when you have a fixed surface.
 
@@ -24,7 +24,7 @@ The n-dimentional object, produced by projecting each factor of a composite obje
 In the 12 example let's start with
 * 12, surface area (tricky for a 1D volume) - 12 (only one face, measure 12)
 * blow it up a bit and the object becomes 2 x 6, surface area 16 (essentially the perimeter of a rectangle of 2 x 6)
-* blow it up even more to a 2 x 2 x 3 and the surface area becomes 26
+* blow it up even more to a 2 x 2 x 3 and the surface area becomes 34
 
 It is not hard to show that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular object for that number is the closest as you can get to a perfect n-cube with that volume.
 The prime factorization of each composite number is the factorization that has the most factors for that number (you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number)
