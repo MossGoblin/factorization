@@ -97,8 +97,7 @@ def create_visualization(number_list: List[Number]):
         data_dict['deviation'].append(number.mean_deviation)
         data_dict['one_over_slope'].append(number.slope)
         if use_bucket_colorization:
-            data_dict['color_bucket'].append(
-                get_bucket_index(binary_buckets, number.value))
+            data_dict['color_bucket'].append(get_bucket_index(binary_buckets, number.value))
 
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
@@ -275,10 +274,10 @@ def get_bucket_index(binary_buckets: Dict, value: int) -> int:
     '''
 
     for index, numbers in binary_buckets.items():
-        for value in numbers:
-            if value == value.value:
+        for number in numbers:
+            if value == number.value:
                 return str(index)
-
+    pass
 
 def generate_timestamp():
     '''
