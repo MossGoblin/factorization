@@ -88,7 +88,9 @@ Rate of convergens to those limits - why converge at all and why alway from abov
 
 **beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, but I am yet to gather the patience to wait for a 1-100000 run
 
-The library I chose for visualization (bokeh) has a limit on the number of colors that can be used - 11.
+**colors**: The library I chose for visualization (bokeh) has a limit on the number of colors that can be used - 11.
 I could not color each antislope line, so I did some bucketing, based on the antislope -if we have X antislope lines on the graph, the heavier half of them (the half with largest antislopes) are in one color bucket. Of the rest, the heavier half is another color bucket and so on.
 As a result the first one or two lines are different colors, then you have 2 with the same color, 4 with another and so on.
 Given that the colors are only for graph readability, I don't plan to optimize that further for now.
+
+**slope variables**: the value of slope was initially calculated incorrectly - in reverse; afterwards these inverse values actually proved very useful, so the concept was kept as it is and renamed to 'antislope'; however, for simplicity, the related variables in the code remain 'slope'; they may be renamed 'anti-' in future iterations

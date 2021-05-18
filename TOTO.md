@@ -1,3 +1,7 @@
+- [ ] reverse binary buckets logic to ensure busket size complience with powers of 2
+
+---
+
 - [x] find a methodical way of splitting orders
   - [x] by antislope
   - [x] automate order coloring

@@ -8,6 +8,7 @@ from datetime import datetime
 import logging
 import math
 import os
+import pyprimes as pp
 from typing import List, Dict, Tuple
 import pandas as pd
 
@@ -42,7 +43,7 @@ def run(lowerbound=2, upperbound=10):
     logger.info('start')
     global include_primes
     include_primes = True if config.get(
-        'run', 'include_primes') == 'True' else False
+        'run', 'include_primes') == 'true' else False
 
     # [x] iterate between bounds and cache numbers
     number_list = generate_number_list(
@@ -54,6 +55,15 @@ def run(lowerbound=2, upperbound=10):
 
 
 def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
+    '''
+    Split numbers into binary buckets by antislope
+
+    The lowest bucket (highest index) contains half of the antislopes - the highest antislope
+    Th next buckets contains half of the remaining antislopes - again the highest ones
+    Each bucket above contains half as many members
+    The top buket always has one antislope
+    '''
+
     number_of_unassigned_buckets = len(sorted_buckets_list)
     number_of_binary_buckets = get_previous_power_of_two(
         number_of_unassigned_buckets)
@@ -80,21 +90,27 @@ def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
 
 
 def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
+    ''' Get the index of the binary bucket by antislope value '''
+
     for bucket_index, slope_list in binary_bucket_index_map.items():
         if slope in slope_list:
             return bucket_index
 
 
-def get_previous_power_of_two(number: int):
+def get_previous_power_of_two(value: int):
+    ''' Get the highest poewr of 2 that's loewr than a provide number '''
+
     running_product = 1
     counter = 0
-    while running_product < number:
+    while running_product < value:
         running_product = running_product * 2
         counter = counter + 1
     return counter - 1
 
 
 def get_slope_buckets(number_list: List) -> Tuple:
+    ''' Split numbers into buckets, based on the integer value their antislope converges to '''
+
     buckets_list = []
     slope_buckets = {}
     for number in number_list:
@@ -111,6 +127,7 @@ def get_slope_buckets(number_list: List) -> Tuple:
 
 
 def create_visualization(number_list: List[Number]):
+    ''' Prepares the generated number data and uses it to create the visualization '''
 
     use_bucket_colorization = True if config.get(
         'run', 'use_color_buckets') == 'true' else False
@@ -136,8 +153,6 @@ def create_visualization(number_list: List[Number]):
     if use_bucket_colorization:
         data_dict['color_bucket'] = []
     for number in number_list:
-        if number.is_prime:
-            continue
         data_dict['number'].append(number.value)
         if include_primes:
             data_dict['is_prime'].append(
@@ -158,15 +173,15 @@ def create_visualization(number_list: List[Number]):
 
     # [x] 'hard copy'
     if config.get('run', 'crate_csv'):
+        csv_output_folder = 'csv_output_folder'
+        path = csv_output_folder + '\\'
+        prep_output_folder(csv_output_folder)
+
         timestamp_format = generate_timestamp()
         timestamp = datetime.utcnow().strftime(timestamp_format)
         primes_included = 'primes_' if include_primes else 'no_primes_'
         hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
             '_' + primes_included + '_' + timestamp + '.csv'
-        csv_output_folder = 'csv_output_folder'
-        path = csv_output_folder + '\\'
-        if not os.path.exists(csv_output_folder):
-            os.mkdir(csv_output_folder)
         data_df.to_csv(path + hard_copy_filename)
         logger.info(f'Saved data as {hard_copy_filename}')
 
@@ -177,7 +192,7 @@ def create_visualization(number_list: List[Number]):
                    x_axis_label='number', y_axis_label='mean prime factor deviation', width=plot_width, height=plot_height)
 
     # [x] add hover tool
-    if primes_included:
+    if include_primes:
         hover = models.HoverTool(tooltips=[('number', '@number'),
                                            ('prime', '@is_prime'),
                                            ('factors', '@prime_factors'),
@@ -194,14 +209,16 @@ def create_visualization(number_list: List[Number]):
 
     # [x] add graph
     number_of_colors = len(binary_buckets)
+    grapg_point_size = int(config.get('graph', 'point_size'))
     if use_bucket_colorization and number_of_colors <= 11:
         factors_list = get_factors(number_of_colors)
-        color_mapper = CategoricalColorMapper(factors=factors_list, palette=Turbo[number_of_colors])
+        color_mapper = CategoricalColorMapper(
+            factors=factors_list, palette=Turbo[number_of_colors])
         logger.info(f'{number_of_colors} color buckets created')
         graph.scatter(source=data, x='number', y='deviation', color={
-                      'field': 'color_bucket', 'transform': color_mapper}, size=5)
+                      'field': 'color_bucket', 'transform': color_mapper}, size=grapg_point_size)
     else:
-        base_color = '#' + config.get('graph', 'base_color')
+        base_color = '#3030ff'
         logger.info('Base coloring')
         graph.scatter(source=data, x='number', y='deviation',
                       color=base_color, size=5)
@@ -210,8 +227,21 @@ def create_visualization(number_list: List[Number]):
     logger.info('Graph generated')
     show(graph)
 
+def prep_output_folder(folder_name: str):
+    if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+            return
+    else:
+        if config.get('run', 'reset_csv_data'):
+            for root, directories, files in os.walk(folder_name):
+                for file in files:
+                    file_path = root + '/' + file
+                    os.remove(file_path)
+        return
 
 def get_factors(number_of_colors: int) -> List:
+    ''' Compile the factors of a number as a list of strings '''
+
     factors_list = []
     for index in range(number_of_colors):
         factors_list.append(str(index))
@@ -220,14 +250,17 @@ def get_factors(number_of_colors: int) -> List:
 
 
 def get_bucket_index(binary_buckets: Dict, value: int) -> int:
+    ''' Get the index of the binary bucket that a number in '''
+
     for index, numbers in binary_buckets.items():
-        for number in numbers:
-            if value == number.value:
+        for value in numbers:
+            if value == value.value:
                 return str(index)
 
 
 def generate_timestamp():
-    # '%d%m%Y_%H%M%S'
+    ''' Generate timestamp string, depending on the desired granularity, set in config.ini '''
+
     timestamp_format = ''
     timestamp_granularity = int(config.get(
         'run', 'hard_copy_timestamp_granularity'))
@@ -238,6 +271,7 @@ def generate_timestamp():
 
 
 def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, bookends=['[ ', ' ]']):
+    ''' Generate a string from a list of integers '''
     stringified_list = []
     for number in number_list:
         stringified_list.append(str(number))
@@ -249,8 +283,13 @@ def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, b
 
 
 def generate_number_list(lowerbound=2, upperbound=10):
+    ''' Generate a list of Number objects '''
+
+    include_primes = config.get('run', 'include_primes')
     number_list = []
     for value in range(lowerbound, upperbound + 1):
+        if pp.isprime(value) and not include_primes:
+            continue
         number = Number(value=value)
         number_list.append(number)
     return number_list
