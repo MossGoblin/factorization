@@ -80,6 +80,7 @@ Antislope   Prime factors (P - larger prime)
 **TO BE EXPLORED**
 
 Derivation of the values antislope limits - 4, 6, 9.. Why these ones?
+
 Rate of convergens to those limits - why converge at all and why alway from above.
 
 ---
