@@ -7,14 +7,14 @@
 Composite numbers have one or more factorizations.
 Example:
 12 =
-12
-2 x 6
-2 x 2 x 3
+* 12
+* 2 x 6
+* 2 x 2 x 3
 
-Each of the factorizations represents am n-dimentional cube, where n is the number of factors in that particular factorization. Each  n-cube for the same composite number can be said to have the same volume (in this example 12) and can also be assigned value for surface.
+Each of the factorizations represents an n-dimentional cube, where n is the number of factors in that particular factorization. Each  n-cube for the same composite number can be said to have the same volume (in this example 12) and can also be assigned value for surface.
 
 Let's have a look only at the prime factorizations of composite objects - in this case 2 x 2 x 3.
-This object has volume of 12 and a surface of 34.
+This object has volume of 12 and a surface of 26.
 
 Consider blowing up a non-elastic baloon. Blowing up a rigid airtight membrane is a process of trying to make it encompass as larger volume as possible, when you have a fixed surface.
 
@@ -22,9 +22,9 @@ Our case with composite objects is the reverse - trying to maximimze the surface
 
 The n-dimentional object, produced by projecting each factor of a composite object into a separate dimention is one such blown up membrane. All factorizations have the same volume, but have different surface areas. Switching through the different factorization objects of the same volume while increasing the surface area is like trying to blow up the membrane that holds that volume as much as possible. If effect the volume will try to redistribute itself such that the surface area is as large as possible.
 In the 12 example let's start with
-- 12, surface area (tricky for a 1D volume) - 12 (only one face, measure 12)
-- blow it up a bit and the object becomes 2 x 6, surface area 16 (essentially the perimeter of a rectangle of 2 x 6)
-- blow it up even more to a 2 x 2 x 3 and the surface area becomes 26
+* 12, surface area (tricky for a 1D volume) - 12 (only one face, measure 12)
+* blow it up a bit and the object becomes 2 x 6, surface area 16 (essentially the perimeter of a rectangle of 2 x 6)
+* blow it up even more to a 2 x 2 x 3 and the surface area becomes 26
 
 It is not hard to show that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular object for that number is the closest as you can get to a perfect n-cube with that volume.
 The prime factorization of each composite number is the factorization that has the most factors for that number (you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number)
@@ -39,10 +39,10 @@ On the other hand, 8 blows up to a perfect n-cube - each dimention reading a val
 So we can make a comparison between composite objects, based on the symmetry of their prime factorization n-cubes.
 
 As a comparison tool, let's calculate and assicg a value to that symmetry. The chosen methos is the following:
-- calculate the prime factors of the number
-- calculate their mean - this represents the dimentions of a perfectly symmetrical n-cube of that volume, if non-integer magnitudes of the sides were allowed
-- calculate the deviation of each side, compared to the mean factor
-- get the mean of the deviations
+* calculate the prime factors of the number
+* calculate their mean - this represents the dimentions of a perfectly symmetrical n-cube of that volume, if non-integer magnitudes of the sides were allowed
+* calculate the deviation of each side, compared to the mean factor
+* get the mean of the deviations
   
 If we use this method to compare two of the factorizations of 12, we'll see that
 2 x 6 has a mean deviation of 4, while
