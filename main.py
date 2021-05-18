@@ -40,7 +40,8 @@ include_primes = False
 
 
 def run(lowerbound=2, upperbound=10):
-    logger.info('start')
+    start = datetime.utcnow()
+    logger.info(f'Start at {start}')
     global include_primes
     include_primes = True if config.get(
         'run', 'include_primes') == 'true' else False
@@ -52,82 +53,15 @@ def run(lowerbound=2, upperbound=10):
 
     # [x] create visualization
     create_visualization(number_list)
-
-
-def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
-    '''
-    Split numbers into binary buckets by antislope
-
-    The lowest bucket (highest index) contains half of the antislopes - the highest antislope
-    Th next buckets contains half of the remaining antislopes - again the highest ones
-    Each bucket above contains half as many members
-    The top buket always has one antislope
-    '''
-
-    number_of_unassigned_buckets = len(sorted_buckets_list)
-    number_of_binary_buckets = get_previous_power_of_two(
-        number_of_unassigned_buckets)
-
-    # create binary bucket index map
-    binary_bucket_index_map = {}
-    binary_slope_buckets = {}
-    for counter in range(number_of_binary_buckets + 1):
-        binary_bucket_index = number_of_binary_buckets - counter
-        binary_bucket_index_map[binary_bucket_index] = []
-        binary_slope_buckets[binary_bucket_index] = []
-        cutoff = math.floor(len(sorted_buckets_list)/2)
-        binary_bucket_index_map[binary_bucket_index].extend(
-            sorted_buckets_list[cutoff:])
-        sorted_buckets_list = sorted_buckets_list[:cutoff]
-
-    # distribute numbers in the binary buckets according to slope
-    for number in slope_buckets.items():
-        binary_bucket_index = get_binary_bucket_index(
-            number[0], binary_bucket_index_map)
-        binary_slope_buckets[binary_bucket_index].extend(number[1])
-
-    return binary_slope_buckets
-
-
-def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
-    ''' Get the index of the binary bucket by antislope value '''
-
-    for bucket_index, slope_list in binary_bucket_index_map.items():
-        if slope in slope_list:
-            return bucket_index
-
-
-def get_previous_power_of_two(value: int):
-    ''' Get the highest poewr of 2 that's loewr than a provide number '''
-
-    running_product = 1
-    counter = 0
-    while running_product < value:
-        running_product = running_product * 2
-        counter = counter + 1
-    return counter - 1
-
-
-def get_slope_buckets(number_list: List) -> Tuple:
-    ''' Split numbers into buckets, based on the integer value their antislope converges to '''
-
-    buckets_list = []
-    slope_buckets = {}
-    for number in number_list:
-        if number.is_prime and not include_primes:
-            continue
-        else:
-            slope_int = round(number.slope)
-            if slope_int not in buckets_list:
-                buckets_list.append(slope_int)
-                slope_buckets[slope_int] = []
-            slope_buckets[slope_int].append(number)
-
-    return buckets_list, slope_buckets
+    end = datetime.utcnow()
+    logger.info(f'End at {end}')
+    logger.info(f'Total time: {end-start}')
 
 
 def create_visualization(number_list: List[Number]):
-    ''' Prepares the generated number data and uses it to create the visualization '''
+    '''
+    Prepares the generated number data and uses it to create the visualization
+    '''
 
     use_bucket_colorization = True if config.get(
         'run', 'use_color_buckets') == 'true' else False
@@ -227,12 +161,93 @@ def create_visualization(number_list: List[Number]):
     logger.info('Graph generated')
     show(graph)
 
+
+def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
+    '''
+    Split numbers into binary buckets by antislope
+
+    The lowest bucket (highest index) contains half of the antislopes - the highest antislope
+    Th next buckets contains half of the remaining antislopes - again the highest ones
+    Each bucket above contains half as many members
+    The top buket always has one antislope
+    '''
+
+    number_of_unassigned_buckets = len(sorted_buckets_list)
+    number_of_binary_buckets = get_previous_power_of_two(
+        number_of_unassigned_buckets)
+
+    # create binary bucket index map
+    binary_bucket_index_map = {}
+    binary_slope_buckets = {}
+    for counter in range(number_of_binary_buckets + 1):
+        binary_bucket_index = number_of_binary_buckets - counter
+        binary_bucket_index_map[binary_bucket_index] = []
+        binary_slope_buckets[binary_bucket_index] = []
+        cutoff = math.floor(len(sorted_buckets_list)/2)
+        binary_bucket_index_map[binary_bucket_index].extend(
+            sorted_buckets_list[cutoff:])
+        sorted_buckets_list = sorted_buckets_list[:cutoff]
+
+    # distribute numbers in the binary buckets according to slope
+    for number in slope_buckets.items():
+        binary_bucket_index = get_binary_bucket_index(
+            number[0], binary_bucket_index_map)
+        binary_slope_buckets[binary_bucket_index].extend(number[1])
+
+    return binary_slope_buckets
+
+
+def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
+    '''
+    Get the index of the binary bucket by antislope value
+    '''
+
+    for bucket_index, slope_list in binary_bucket_index_map.items():
+        if slope in slope_list:
+            return bucket_index
+
+
+def get_previous_power_of_two(value: int):
+    '''
+    Get the highest poewr of 2 that's loewr than a provide number
+    '''
+
+    running_product = 1
+    counter = 0
+    while running_product < value:
+        running_product = running_product * 2
+        counter = counter + 1
+    return counter - 1
+
+
+def get_slope_buckets(number_list: List) -> Tuple:
+    '''
+    Split numbers into buckets, based on the integer value their antislope converges to
+    '''
+
+    buckets_list = []
+    slope_buckets = {}
+    for number in number_list:
+        if number.is_prime and not include_primes:
+            continue
+        else:
+            slope_int = round(number.slope)
+            if slope_int not in buckets_list:
+                buckets_list.append(slope_int)
+                slope_buckets[slope_int] = []
+            slope_buckets[slope_int].append(number)
+
+    return buckets_list, slope_buckets
+
+
 def prep_output_folder(folder_name: str):
-    ''' Prepare folder for output csv files '''
+    '''
+    Prepare folder for output csv files
+    '''
 
     if not os.path.exists(folder_name):
-            os.mkdir(folder_name)
-            return
+        os.mkdir(folder_name)
+        return
     else:
         if config.get('run', 'reset_csv_data'):
             for root, directories, files in os.walk(folder_name):
@@ -241,8 +256,11 @@ def prep_output_folder(folder_name: str):
                     os.remove(file_path)
         return
 
+
 def get_factors(number_of_colors: int) -> List:
-    ''' Compile the factors of a number as a list of strings '''
+    '''
+    Compile the factors of a number as a list of strings
+    '''
 
     factors_list = []
     for index in range(number_of_colors):
@@ -252,7 +270,9 @@ def get_factors(number_of_colors: int) -> List:
 
 
 def get_bucket_index(binary_buckets: Dict, value: int) -> int:
-    ''' Get the index of the binary bucket that a number in '''
+    '''
+    Get the index of the binary bucket that a number in
+    '''
 
     for index, numbers in binary_buckets.items():
         for value in numbers:
@@ -261,7 +281,9 @@ def get_bucket_index(binary_buckets: Dict, value: int) -> int:
 
 
 def generate_timestamp():
-    ''' Generate timestamp string, depending on the desired granularity, set in config.ini '''
+    '''
+    Generate timestamp string, depending on the desired granularity, set in config.ini
+    '''
 
     timestamp_format = ''
     timestamp_granularity = int(config.get(
@@ -273,7 +295,10 @@ def generate_timestamp():
 
 
 def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, bookends=['[ ', ' ]']):
-    ''' Generate a string from a list of integers '''
+    '''
+    Generate a string from a list of integers
+    '''
+
     stringified_list = []
     for number in number_list:
         stringified_list.append(str(number))
@@ -285,7 +310,9 @@ def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, b
 
 
 def generate_number_list(lowerbound=2, upperbound=10):
-    ''' Generate a list of Number objects '''
+    '''
+    Generate a list of Number objects
+    '''
 
     include_primes = config.get('run', 'include_primes')
     number_list = []
