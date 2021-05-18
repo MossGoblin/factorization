@@ -5,6 +5,6 @@
 - [x] add logger
 - [x] add .csv output
 - [ ] documentation
-  - [ ] full comments for .ini
-- [ ] find out the max colors from palette
+  - [x] full comments for .ini
+- [x] find out the max colors from palette
 - [ ] find if anything can be gathered by slope

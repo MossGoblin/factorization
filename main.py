@@ -2,7 +2,8 @@ from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Greys256
+from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Greys
+from bokeh.palettes import Magma256, Inferno256, Plasma256, Viridis256, Cividis256, Turbo256, Greys256
 from datetime import datetime
 import logging
 import math
@@ -48,40 +49,8 @@ def run(lowerbound=2, upperbound=10):
         lowerbound=lowerbound, upperbound=upperbound)
     logger.info(f'Numbers generated {lowerbound}..{upperbound}')
 
-    # [...] create visualization
+    # [x] create visualization
     create_visualization(number_list)
-
-
-def assign_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
-    number_of_unassigned_buckets = len(sorted_buckets_list)
-    number_of_binary_buckets = get_previous_power_of_two(
-        number_of_unassigned_buckets)
-
-    # create binary bucket index map
-    binary_bucket_index_map = {}
-    binary_slope_buckets = {}
-    binary_bucket_assignments = {}
-    for counter in range(number_of_binary_buckets + 1):
-        binary_bucket_index = number_of_binary_buckets - counter
-        binary_bucket_index_map[binary_bucket_index] = []
-        binary_slope_buckets[binary_bucket_index] = []
-        cutoff = math.floor(len(sorted_buckets_list)/2)
-        binary_bucket_index_map[binary_bucket_index].extend(
-            sorted_buckets_list[cutoff:])
-        sorted_buckets_list = sorted_buckets_list[:cutoff]
-
-    # distribute numbers in the binary buckets according to slope
-    for number in slope_buckets.items():
-        binary_bucket_index = get_binary_bucket_index(
-            number[0], binary_bucket_index_map)
-        binary_slope_buckets[binary_bucket_index].extend(number[1])
-
-    for bucket, numbers in binary_slope_buckets.items():
-        for number in numbers:
-            binary_bucket_assignments[number.value] = bucket
-
-    pass
-    return binary_bucket_assignments
 
 
 def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
@@ -155,7 +124,7 @@ def create_visualization(number_list: List[Number]):
         binary_buckets = get_binary_buckets(
             sorted(buckets_list), slope_buckets)
 
-    # [...] prep visualization data
+    # [x] prep visualization data
     data_dict = {}
     data_dict['number'] = []
     if include_primes:
@@ -207,26 +176,32 @@ def create_visualization(number_list: List[Number]):
     graph = figure(title=f"Mean prime factor deviations for numbers {data_dict['number'][0]} to {data_dict['number'][-1]}",
                    x_axis_label='number', y_axis_label='mean prime factor deviation', width=plot_width, height=plot_height)
 
-    # [...] add hover tool
-    hover = models.HoverTool(tooltips=[('number', '@number'),
-                                       #    ('prime', '@is_prime'),
-                                       ('factors', '@prime_factors'),
-                                       ('mean factor value', '@mean'),
-                                       ('mean factor deviation', '@deviation'),
-                                       ('anti-slope', '@one_over_slope')])
+    # [x] add hover tool
+    if primes_included:
+        hover = models.HoverTool(tooltips=[('number', '@number'),
+                                           ('prime', '@is_prime'),
+                                           ('factors', '@prime_factors'),
+                                           ('mean factor value', '@mean'),
+                                           ('mean factor deviation', '@deviation'),
+                                           ('anti-slope', '@one_over_slope')])
+    else:
+        hover = models.HoverTool(tooltips=[('number', '@number'),
+                                           ('factors', '@prime_factors'),
+                                           ('mean factor value', '@mean'),
+                                           ('mean factor deviation', '@deviation'),
+                                           ('anti-slope', '@one_over_slope')])
     graph.add_tools(hover)
 
     # [x] add graph
-    if use_bucket_colorization:
-        number_of_colors = len(binary_buckets)
+    number_of_colors = len(binary_buckets)
+    if use_bucket_colorization and number_of_colors <= 11:
         factors_list = get_factors(number_of_colors)
-        color_mapper = CategoricalColorMapper(
-            factors=factors_list, palette=Magma[number_of_colors])
+        color_mapper = CategoricalColorMapper(factors=factors_list, palette=Turbo[number_of_colors])
         logger.info(f'{number_of_colors} color buckets created')
         graph.scatter(source=data, x='number', y='deviation', color={
                       'field': 'color_bucket', 'transform': color_mapper}, size=5)
     else:
-        base_color = config.get('graph', 'base_color')
+        base_color = '#' + config.get('graph', 'base_color')
         logger.info('Base coloring')
         graph.scatter(source=data, x='number', y='deviation',
                       color=base_color, size=5)
