@@ -22,12 +22,12 @@ Our case with composite objects is the reverse - trying to maximimze the surface
 
 The n-dimentional object, produced by projecting each factor of a composite object into a separate dimention is one such blown up membrane. All factorizations have the same volume, but have different surface areas. Switching through the different factorization objects of the same volume while increasing the surface area is like trying to blow up the membrane that holds that volume as much as possible. If effect the volume will try to redistribute itself such that the surface area is as large as possible.
 In the 12 example let's start with
-* 12, surface area (tricky for a 1D volume) - 12 (only one face, measure 12)
-* blow it up a bit and the object becomes 2 x 6, surface area 16 (essentially the perimeter of a rectangle of 2 x 6)
+* 12, surface area (tricky for a 1D volume) = 12 (only one face, measure 12)
+* blow it up a bit and the object becomes 2 x 6, surface area = 16 (essentially the perimeter of a rectangle of 2 x 6)
 * blow it up even more to a 2 x 2 x 3 and the surface area becomes 34
 
 It is not hard to show that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular object for that number is the closest as you can get to a perfect n-cube with that volume.
-The prime factorization of each composite number is the factorization that has the most factors for that number (you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number)
+The prime factorization of each composite number is the factorization that has the most factors for that number - you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number.
 
 This all means that the prime factorization of the composite number gives the dimentions of the most 'blown up' possible object of that volume.
 
@@ -38,7 +38,7 @@ On the other hand, 8 blows up to a perfect n-cube - each dimention reading a val
 
 So we can make a comparison between composite objects, based on the symmetry of their prime factorization n-cubes.
 
-As a comparison tool, let's calculate and assicg a value to that symmetry. The chosen methos is the following:
+As a comparison tool, let's calculate and assign a value to that symmetry. The chosen methos is the following:
 * calculate the prime factors of the number
 * calculate their mean - this represents the dimentions of a perfectly symmetrical n-cube of that volume, if non-integer magnitudes of the sides were allowed
 * calculate the deviation of each side, compared to the mean factor
@@ -57,17 +57,16 @@ List the numbers, calculate the mean deviations and plot them.
 ## notes on the data and the graph
 
 **antislope**
-As an additional piece of data I added the slope for each data point. However in the early iterations I mistakenly calculated that slope in reverse - run / rise. And it's good that I did, cause the values of that antislope are directly linked to the form of the graph - those lines that can be seen are (almost) described by the antislope.
+As an additional piece of data I added the slope for each data point. However in the early iterations I mistakenly calculated that slope in reverse - run / rise. And it's good that I did, cause the values of that antislope are easier to read than the real sope values and are directly linked to the form of the graph - those lines that can be seen are described by the antislope. hey are also not straight lines, but only by that much!
 
 All points on the top line have antislopes that are very very very close to 4.
 They start at 4.471 at the first one (the number 38), then 4.381 (for 46), then close and closer to 4 with the value converging to 4 slower and slower. The antisplot drops below 4.1 at 166 and it drops below 4.01 at 1706. From there on the number of numbers with an antislope close to 4 that share an exact antislope becomes larger and larger (a lot of such numbers with antislope 4.003, even more with 4.002 and so on.). I haven't explored yet that part - the rate of convergence of the antislope.
 
-There are similar lines below the top one that converge on higher antislopes - the next one being 6, then 9, then 10 and so on (I'haven't looked for the pattern yet).
+There are similar lines below the top one that converge on higher antislopes - the next one being 6, then 9, then 10 and so on.
 
 Antislope as a function of prime factorization composition.
-All numbers with antislope converging to 4 are a product of an even and a prime. Similarily the numbers wiht antislope close to 3 are a product of 3 and a prime. The antislope 9 numbers are 2 x 2 x prime.
+All numbers with antislope converging to 4 are a product of 2 and a larger prime. Similarily the numbers wiht antislope close to 6 are a product of 3 and a larger prime. The antislope 9 numbers are 2 x 2 x larger prime.
 
-I haven't explored any of that yet, but there are two linked and very clear patterns.
 Antislope   Prime factors (P - larger prime)
 4           2, P
 6           3, P
@@ -76,9 +75,19 @@ Antislope   Prime factors (P - larger prime)
 13          2, 3, P
 14          7, P
 (continues)
-I haven't extracted more at this point from the patterns, nor have I made attemt to analize them yet.
+
+
+**TO BE EXPLORED**
+
+Derivation of the values antislope limits - 4, 6, 9.. Why these ones?
+Rate of convergens to those limits - why converge at all and why alway from above.
 
 ---
-## notes on the code
+## notes on the code and the graph
 
 **beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, but I am yet to gather the patience to wait for a 1-100000 run
+
+The library I chose for visualization (bokeh) has a limit on the number of colors that can be used - 11.
+I could not color each antislope line, so I did some bucketing, based on the antislope -if we have X antislope lines on the graph, the heavier half of them (the half with largest antislopes) are in one color bucket. Of the rest, the heavier half is another color bucket and so on.
+As a result the first one or two lines are different colors, then you have 2 with the same color, 4 with another and so on.
+Given that the colors are only for graph readability, I don't plan to optimize that further for now.
