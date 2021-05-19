@@ -128,7 +128,7 @@ This, practically, means that each line is a modulo N family, where N is a posit
 
 **TO BE EXPLORED**
 
-- Why the integer slope is 4, 6, 9...? It probably relates to the remainder when removing the largest prime factor, but I have yet to find how. (Just to be sure, I looked in OEIS for the first 10 integer antislopes - 4, 6, 9, 10, 13, 14, 20, 21, 22, 26 - and did not find a matching sequence)
+- Why the integer antislope is 4, 6, 9...? It probably relates to the remainder when removing the largest prime factor, but I have yet to find how. (Just to be sure, I looked in OEIS for the first 10 integer antislopes - 4, 6, 9, 10, 13, 14, 20, 21, 22, 26 - and did not find a matching sequence)
 - Rate of converges to those limits - why converge at all and why always from above?
 
 
@@ -155,5 +155,7 @@ The problem is that 7183 has an antislope of 22.377 and 7190 has an antislope 22
 I could not color each antislope line, so I did some bucketing, based on the antislope - if we have X antislope lines on the graph, the heavier half of them (the half with largest antislopes) are in one color bucket. Of the rest, the heavier half is another color bucket and so on.
 As a result the first one or two lines are different colors, then you have 2 with the same color, 4 with another and so on.
 Given that the colors are only for graph readability, I don't plan to optimize that further for now.
+
+Additionally, if you run the script for a range that would require more than 11 color buckets, it will default to the monocolour version.
 
 **'slope' named variables**: as mentioned, the value of slope was initially calculated in reverse, by mistake; afterwards these inverse values actually proved very useful, so the concept was kept as it is and renamed to 'antislope'; however, for simplicity, the related variables in the code remain 'slope'; they may be renamed 'anti-' in future iterations
