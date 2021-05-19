@@ -10,7 +10,7 @@
 .history/
 
 # CSV OUTPUT
-.csv_output_folder/
+# .csv_output_folder/
 
 # PYTHON
 # Byte-compiled / optimized / DLL files

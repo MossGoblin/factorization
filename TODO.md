@@ -1,4 +1,5 @@
 - [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
+- [ ] add export to PNG of SVG
 
 ---
 

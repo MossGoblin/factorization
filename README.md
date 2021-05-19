@@ -1,8 +1,34 @@
+## how to view the prepared data from the repo
+
+**graph**
+
+The mail.html file is exported by the bokeh visualization library on each run.
+
+This file can be viewed by opening the following link:
+
+https://raw.githack.com/MossGoblin/factorization/master/main.html
+
+Keep in mind that every time I go through a new local run and push my changes to the repo, the main.html file will be replaced with the new version.
+
+If there is any other html file, it is most likely a file from a previous run that was renamed manually in order to be preserved between runs.
+
+To view such a file, do the following:
+
+1. Copy the link to the .html file from the repo - for example https://github.com/MossGoblin/factorization/blob/master/main_1000000.html
+2. Go to https://raw.githack.com and paste the link there
+3. Copy one of the resulting URLs, preferably the one for development, and open it in your browser.
+
+**csv**
+
+The csv files, if any are present in the repo, are in the 'csv_output_folder' folder. The file with latest date should match the data in main.html. To make sure, compare the range in the filename of the csv to the title of the graph, when you open it in your browser.
+
+------
+
 # Blowing up composite numbers
 
-## short explanation:
+## explanation of the idea:
 
-*Disclaimer*: prime numbers are being excluded as being extreme (in the terms of what is described below) and not bringing much useful information via the described method.
+*Disclaimer*: prime numbers are not mentioned in the explanation as being extreme (in the terms of what is described below). All of the below works for them, but I don't think they bring much to the table at this point.
 
 ### Base
 
@@ -120,12 +146,10 @@ That puts 7183 in the family of numbers divisible by 11 and 7190 - divisible by 
 But thus far it seemed that the higher this divisibility factor, the higher the integer antislope of the number.
 The problem is that 7183 has an antislope of 22.377 and 7190 has an antislope 22.610, which puts the larger number on a lower integer antislope line. More importantly, it also means that both converge to 22.
 
-
-
 ---
-## notes on the code and the graph
+# notes on the code and the graph
 
-**beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, but I am yet to gather the patience to wait for a 1-100000 run
+**beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, and 1-100000 run takes more than 30 min. If at some point I feel the need to generate frequently larger datasets, I'll work on optimizing the code for speed.
 
 **colors**: The library I chose for visualization (bokeh) has a limit on the number of colors that can be used - 11.
 I could not color each antislope line, so I did some bucketing, based on the antislope - if we have X antislope lines on the graph, the heavier half of them (the half with largest antislopes) are in one color bucket. Of the rest, the heavier half is another color bucket and so on.
