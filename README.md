@@ -67,21 +67,23 @@ There are similar lines below the top one that converge on higher antislopes - t
 Antislope as a function of prime factorization composition.
 All numbers with antislope converging to 4 are a product of 2 and a larger prime. Similarily the numbers wiht antislope close to 6 are a product of 3 and a larger prime. The antislope 9 numbers are 2 x 2 x larger prime.
 
-Antislope   Prime factors (P - larger prime)
-4           2, P
-6           3, P
-9           2, 2, P
-10          5, P
-13          2, 3, P
-14          7, P
+The product of all the factors of a number except the largest one gives a product that places the number into one of the lines.
+
+Antislope   Prime factors (P = larger prime)    number / P
+4           2, P                                2
+6           3, P                                3
+9           2, 2, P                             4
+10          5, P                                5
+13          2, 3, P                             6
+14          7, P                                7
 (continues)
 
 
 **TO BE EXPLORED**
 
-Derivation of the values antislope limits - 4, 6, 9.. Why these ones?
+Derivation of the values of the antislope limits - 4, 6, 9.. Why these ones?
 
-Rate of convergens to those limits - why converge at all and why alway from above.
+Rate of convergens to those limits - why converge at all and why alway from above?
 
 ---
 ## notes on the code and the graph
