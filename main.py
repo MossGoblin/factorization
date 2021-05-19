@@ -128,7 +128,8 @@ def create_visualization(number_list: List[Number]):
     # [x] create plot
     plot_width = int(config.get('graph', 'width'))
     plot_height = int(config.get('graph', 'height'))
-    graph = figure(title=f"Mean prime factor deviations for numbers {data_dict['number'][0]} to {data_dict['number'][-1]}",
+    primes_included_text = "included" if include_primes else "excluded"
+    graph = figure(title=f"Mean prime factor deviations for numbers {data_dict['number'][0]} to {data_dict['number'][-1]}. Primes {primes_included_text}.",
                    x_axis_label='number', y_axis_label='mean prime factor deviation', width=plot_width, height=plot_height)
 
     # [x] add hover tool
