@@ -1,4 +1,4 @@
-- [ ] reverse binary buckets logic to ensure busket size complience with powers of 2
+- [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
 
 ---
 
@@ -11,4 +11,4 @@
 - [ ] documentation
   - [x] full comments for .ini
 - [x] find out the max colors from palette
-- [ ] find if anything can be gathered by slope
+- [x] find if anything can be gathered by slope

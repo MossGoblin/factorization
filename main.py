@@ -34,17 +34,29 @@ config.read('config.ini')
 
 lowerbound = int(config.get('range', 'lowerbound'))
 upperbound = int(config.get('range', 'upperbound'))
+use_bucket_colorization = True if config.get(
+    'run', 'use_color_buckets') == 'true' else False
 
-
-include_primes = False
+# RUN parameters
+include_primes = True if config.get(
+    'run', 'include_primes') == 'true' else False
+create_csv = config.get('run', 'crate_csv')
 
 
 def run(lowerbound=2, upperbound=10):
+    global include_primes
+    global create_csv
+    global use_bucket_colorization
+
     start = datetime.utcnow()
     logger.info(f'Start at {start}')
-    global include_primes
-    include_primes = True if config.get(
-        'run', 'include_primes') == 'true' else False
+    logger.info(f'* Range [{lowerbound}..{upperbound}]')
+    include_primes_message = '* Primes included' if include_primes else '* Primes NOT included'
+    logger.info(include_primes_message)
+    create_csv_message = '* CSV output included' if create_csv else '* No CVS output'
+    logger.info(create_csv_message)
+    bucket_colorization_message = '* Bucket colorization enabled' if use_bucket_colorization else '* Monocolor enabled'
+    logger.info(bucket_colorization_message)
 
     # [x] iterate between bounds and cache numbers
     number_list = generate_number_list(
@@ -62,9 +74,6 @@ def create_visualization(number_list: List[Number]):
     '''
     Prepares the generated number data and uses it to create the visualization
     '''
-
-    use_bucket_colorization = True if config.get(
-        'run', 'use_color_buckets') == 'true' else False
 
     if use_bucket_colorization:
         # [x] separate numbers into binary buckets by closest integer to number.slope
@@ -84,6 +93,8 @@ def create_visualization(number_list: List[Number]):
     data_dict['mean'] = []
     data_dict['deviation'] = []
     data_dict['one_over_slope'] = []
+    data_dict['primes_before_largest'] = []
+    data_dict['largest_prime_factor'] = []
     if use_bucket_colorization:
         data_dict['color_bucket'] = []
     for number in number_list:
@@ -96,27 +107,23 @@ def create_visualization(number_list: List[Number]):
         data_dict['mean'].append(number.prime_mean)
         data_dict['deviation'].append(number.mean_deviation)
         data_dict['one_over_slope'].append(number.slope)
+        if number.value == 1:
+            data_dict['primes_before_largest'].append(0)
+            data_dict['largest_prime_factor'].append(0)
+        else:
+            primes_before_largest, largest_prime_factor = split_prime_factors(
+                number.prime_factors)
+            data_dict['primes_before_largest'].append(
+                int_list_to_str(primes_before_largest))
+            data_dict['largest_prime_factor'].append(largest_prime_factor)
         if use_bucket_colorization:
-            data_dict['color_bucket'].append(get_bucket_index(binary_buckets, number.value))
+            data_dict['color_bucket'].append(
+                get_bucket_index(binary_buckets, number.value))
 
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
     data = ColumnDataSource(data=data_df)
     logger.info(f'Data collated')
-
-    # [x] 'hard copy'
-    if config.get('run', 'crate_csv'):
-        csv_output_folder = 'csv_output_folder'
-        path = csv_output_folder + '\\'
-        prep_output_folder(csv_output_folder)
-
-        timestamp_format = generate_timestamp()
-        timestamp = datetime.utcnow().strftime(timestamp_format)
-        primes_included = 'primes_' if include_primes else 'no_primes_'
-        hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
-            '_' + primes_included + '_' + timestamp + '.csv'
-        data_df.to_csv(path + hard_copy_filename)
-        logger.info(f'Saved data as {hard_copy_filename}')
 
     # [x] create plot
     plot_width = int(config.get('graph', 'width'))
@@ -125,19 +132,18 @@ def create_visualization(number_list: List[Number]):
                    x_axis_label='number', y_axis_label='mean prime factor deviation', width=plot_width, height=plot_height)
 
     # [x] add hover tool
+    tooltips = [('number', '@number')]
     if include_primes:
-        hover = models.HoverTool(tooltips=[('number', '@number'),
-                                           ('prime', '@is_prime'),
-                                           ('factors', '@prime_factors'),
-                                           ('mean factor value', '@mean'),
-                                           ('mean factor deviation', '@deviation'),
-                                           ('anti-slope', '@one_over_slope')])
-    else:
-        hover = models.HoverTool(tooltips=[('number', '@number'),
-                                           ('factors', '@prime_factors'),
-                                           ('mean factor value', '@mean'),
-                                           ('mean factor deviation', '@deviation'),
-                                           ('anti-slope', '@one_over_slope')])
+        tooltips.append(('prime', '@is_prime'))
+    tooltips.extend([('factors', '@prime_factors'),
+                    ('mean factor value', '@mean'),
+                    ('mean factor deviation', '@deviation'),
+                    ('anti-slope', '@one_over_slope'),
+                    ('prime factors before largest', '@primes_before_largest'),
+                    ('largest prime factor', '@largest_prime_factor'),
+                     ])
+
+    hover = models.HoverTool(tooltips=tooltips)
     graph.add_tools(hover)
 
     # [x] add graph
@@ -156,9 +162,28 @@ def create_visualization(number_list: List[Number]):
         graph.scatter(source=data, x='number', y='deviation',
                       color=base_color, size=5)
 
+    # [x] 'hard copy'
+    if create_csv:
+        csv_output_folder = 'csv_output_folder'
+        path = csv_output_folder + '\\'
+        prep_output_folder(csv_output_folder)
+
+        timestamp_format = generate_timestamp()
+        timestamp = datetime.utcnow().strftime(timestamp_format)
+        primes_included = 'primes_' if include_primes else 'no_primes_'
+        hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
+            '_' + primes_included + '_' + timestamp + '.csv'
+        data_df.to_csv(path + hard_copy_filename)
+        logger.info(f'Data saved as {hard_copy_filename}')
+
     # [x] show
     logger.info('Graph generated')
     show(graph)
+
+
+def split_prime_factors(int_list: List[int]) -> int:
+    sorted_int_list = sorted(int_list)
+    return sorted_int_list[:-1], sorted_int_list[-1]
 
 
 def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
@@ -278,6 +303,7 @@ def get_bucket_index(binary_buckets: Dict, value: int) -> int:
             if value == number.value:
                 return str(index)
     pass
+
 
 def generate_timestamp():
     '''
