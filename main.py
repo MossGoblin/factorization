@@ -2,8 +2,7 @@ from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Greys
-from bokeh.palettes import Magma256, Inferno256, Plasma256, Viridis256, Cividis256, Turbo256, Greys256
+from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
 from datetime import datetime
 import logging
 import math
@@ -12,6 +11,7 @@ import pyprimes as pp
 from typing import List, Dict, Tuple
 import pandas as pd
 
+import mappings
 from number import Number
 
 # create logger
@@ -34,19 +34,25 @@ config.read('config.ini')
 
 lowerbound = int(config.get('range', 'lowerbound'))
 upperbound = int(config.get('range', 'upperbound'))
-use_bucket_colorization = True if config.get(
-    'run', 'use_color_buckets') == 'true' else False
 
 # RUN parameters
+use_bucket_colorization = True if config.get(
+    'run', 'use_color_buckets') == 'true' else False
 include_primes = True if config.get(
     'run', 'include_primes') == 'true' else False
 create_csv = config.get('run', 'crate_csv')
+palette = Turbo
+palette_name = config.get('graph', 'palette')
+graph_value = config.get('graph', 'value')
 
 
 def run(lowerbound=2, upperbound=10):
     global include_primes
     global create_csv
     global use_bucket_colorization
+    global palette_name
+    global palette
+    global graph_value
 
     start = datetime.utcnow()
     logger.info(f'Start at {start}')
@@ -55,8 +61,10 @@ def run(lowerbound=2, upperbound=10):
     logger.info(include_primes_message)
     create_csv_message = '* CSV output included' if create_csv else '* No CVS output'
     logger.info(create_csv_message)
-    bucket_colorization_message = '* Bucket colorization enabled' if use_bucket_colorization else '* Monocolor enabled'
+    palette_name_string = 'Default (Turbo)' if palette_name == 'Default' else palette_name
+    bucket_colorization_message = f'* Bucket colorization enabled: {palette_name_string}' if use_bucket_colorization else '* Monocolor enabled'
     logger.info(bucket_colorization_message)
+    palette = get_palette(palette_name=palette_name)
 
     # [x] iterate between bounds and cache numbers
     number_list = generate_number_list(
@@ -128,9 +136,16 @@ def create_visualization(number_list: List[Number]):
     # [x] create plot
     plot_width = int(config.get('graph', 'width'))
     plot_height = int(config.get('graph', 'height'))
-    primes_included_text = "included" if include_primes else "excluded"
-    graph = figure(title=f"Mean prime factor deviations for numbers {data_dict['number'][0]} to {data_dict['number'][-1]}. Primes {primes_included_text}.",
-                   x_axis_label='number', y_axis_label='mean prime factor deviation', width=plot_width, height=plot_height)
+    primes_included_text = " Primes included" if include_primes else " Primes excluded"
+
+    graph_params = {}
+    graph_params['title'] = mappings.graph_title[graph_value].format(
+        data_dict['number'][0], data_dict['number'][-1]) + primes_included_text
+    graph_params['y_axis_label'] = mappings.y_axis_label[graph_value]
+    graph_params['width'] = plot_width
+    graph_params['height'] = plot_height
+
+    graph = get_figure(graph_params)
 
     # [x] add hover tool
     tooltips = [('number', '@number')]
@@ -148,20 +163,20 @@ def create_visualization(number_list: List[Number]):
     graph.add_tools(hover)
 
     # [x] add graph
-    number_of_colors = len(binary_buckets)
+    if use_bucket_colorization:
+        number_of_colors = len(binary_buckets)
     graph_point_size = int(config.get('graph', 'point_size'))
-    if use_bucket_colorization and number_of_colors <= 11:
-        factors_list = get_factors(number_of_colors)
-        color_mapper = CategoricalColorMapper(
-            factors=factors_list, palette=Turbo[number_of_colors])
-        logger.info(f'{number_of_colors} color buckets created')
-        graph.scatter(source=data, x='number', y='deviation', color={
-                      'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
-    else:
-        base_color = '#3030ff'
-        logger.info('Base coloring')
-        graph.scatter(source=data, x='number', y='deviation',
-                      color=base_color, size=5)
+
+    graph_params['type'] = 'scatter'
+    graph_params['y_value'] = mappings.y_axis_values[graph_value]
+    graph_params['graph_point_size'] = graph_point_size
+    graph_params['use_bucket_colorization'] = use_bucket_colorization
+    if use_bucket_colorization:
+        graph_params['number_of_colors'] = number_of_colors
+        graph_params['factors_list'] = get_factors(number_of_colors)
+    graph_params['palette'] = palette
+
+    graph = create_graph(graph, data, graph_params)
 
     # [x] 'hard copy'
     if create_csv:
@@ -180,6 +195,69 @@ def create_visualization(number_list: List[Number]):
     # [x] show
     logger.info('Graph generated')
     show(graph)
+
+
+def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> figure:
+    '''
+    Creates a scatter plot by given parameters
+    '''
+
+    use_bucket_colorization = graph_params['use_bucket_colorization']
+    if use_bucket_colorization:
+        number_of_colors = graph_params['number_of_colors']
+        factors_list = graph_params['factors_list']
+    y_value = graph_params['y_value']
+    graph_point_size = graph_params['graph_point_size']
+    palette = graph_params['palette']
+
+    if use_bucket_colorization and number_of_colors <= 11:
+        factors_list = get_factors(number_of_colors)
+        color_mapper = CategoricalColorMapper(
+            factors=factors_list, palette=palette[number_of_colors])
+        logger.info(f'{number_of_colors} color buckets created')
+        graph.scatter(source=data, x='number', y=y_value, color={
+                      'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
+    else:
+        base_color = '#3030ff'
+        logger.info('Base coloring')
+        graph.scatter(source=data, x='number', y=y_value,
+                      color=base_color, size=graph_point_size)
+
+    return graph
+
+
+def get_palette(palette_name: str) -> palette:
+    '''
+    Returns a bokeh palette, corresponding to a given str palette name
+    '''
+
+    # Magma, Inferno, Plasma, Viridis, Cividis, Turbo
+    if palette_name == 'Magma':
+        return Magma
+    elif palette_name == 'Inferno':
+        return Inferno
+    elif palette_name == 'Plasma':
+        return Plasma
+    elif palette_name == 'Viridis':
+        return Viridis
+    elif palette_name == 'Cividis':
+        return Cividis
+    elif palette_name == 'Turbo':
+        return Turbo
+    else:
+        return Turbo
+
+
+def get_figure(params: Dict) -> figure:
+    '''
+    Returns a figure with the provided parameters
+    '''
+    title = params['title']
+    y_axis_label = params['y_axis_label']
+    width = params['width']
+    height = params['height']
+
+    return figure(title=title, x_axis_label='number', y_axis_label=y_axis_label, width=width, height=height)
 
 
 def split_prime_factors(int_list: List[int]) -> int:
@@ -303,7 +381,6 @@ def get_bucket_index(binary_buckets: Dict, value: int) -> int:
         for number in numbers:
             if value == number.value:
                 return str(index)
-    pass
 
 
 def generate_timestamp():
@@ -340,7 +417,6 @@ def generate_number_list(lowerbound=2, upperbound=10):
     Generate a list of Number objects
     '''
 
-    include_primes = config.get('run', 'include_primes')
     number_list = []
     for value in range(lowerbound, upperbound + 1):
         if pp.isprime(value) and not include_primes:
