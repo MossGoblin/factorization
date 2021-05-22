@@ -104,6 +104,7 @@ def create_visualization(number_list: List[Number]):
     data_dict['one_over_slope'] = []
     data_dict['primes_before_largest'] = []
     data_dict['largest_prime_factor'] = []
+    data_dict['div_family'] = []
     if use_bucket_colorization:
         data_dict['color_bucket'] = []
     for number in number_list:
@@ -119,12 +120,14 @@ def create_visualization(number_list: List[Number]):
         if number.value == 1:
             data_dict['primes_before_largest'].append(0)
             data_dict['largest_prime_factor'].append(0)
+            data_dict['div_family'].append(1)
         else:
             primes_before_largest, largest_prime_factor = split_prime_factors(
                 number.prime_factors)
             data_dict['primes_before_largest'].append(
                 int_list_to_str(primes_before_largest))
             data_dict['largest_prime_factor'].append(largest_prime_factor)
+            data_dict['div_family'].append(number.value / largest_prime_factor)
         if use_bucket_colorization:
             data_dict['color_bucket'].append(
                 get_bucket_index(binary_buckets, number.value))
@@ -158,6 +161,7 @@ def create_visualization(number_list: List[Number]):
                     ('anti-slope', '@one_over_slope'),
                     ('prime factors before largest', '@primes_before_largest'),
                     ('largest prime factor', '@largest_prime_factor'),
+                    ('division family', '@div_family'),
                      ])
 
     hover = models.HoverTool(tooltips=tooltips)
@@ -192,7 +196,7 @@ def create_visualization(number_list: List[Number]):
         path = csv_output_folder + '\\'
         prep_output_folder(csv_output_folder)
         data_df.to_csv(path + full_hard_copy_filename)
-        logger.info(f'Data saved as {full_hard_copy_filename}')
+        logger.info(f'Data saved as output\{full_hard_copy_filename}')
 
     # [x] show
     logger.info('Graph generated')
@@ -239,6 +243,7 @@ def stash_graph_html(csv_output_folder, graph_filename: str):
         content = html_output_file.read()
         with open(full_stashed_filename, 'wt') as stashed_html_output_file:
             stashed_html_output_file.write(content)
+    logger.info(f'Graph saved as {full_stashed_filename}')
 
 
 def get_palette(palette_name: str) -> palette:
