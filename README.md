@@ -2,25 +2,25 @@
 
 **graph**
 
-The mail.html file is exported by the bokeh visualization library on each run.
+The mail.html file in the root folder is exported by the bokeh visualization library on each run.
 
-This file can be viewed by opening the following link:
+The 'output' folder contains pair of files, saved from previous runs - a .csv file and a .html file with the same names. The .csv files contains the collated data, the .html file is the graph itself.
+
+The main html file can be viewed by opening the following link:
 
 https://raw.githack.com/MossGoblin/factorization/master/main.html
 
 Keep in mind that every time I go through a new local run and push my changes to the repo, the main.html file will be replaced with the new version.
 
-If there is any other html file, it is most likely a file from a previous run that was renamed manually in order to be preserved between runs.
+The main.html file is always the same as the html file in 'output' with the latest timestamp.
+
+To view an html file from the output folder, do the following:
 
 To view such a file, do the following:
 
 1. Copy the link to the .html file from the repo - for example https://github.com/MossGoblin/factorization/blob/master/main_1000000.html
 2. Go to https://raw.githack.com and paste the link there
 3. Copy one of the resulting URLs, preferably the one for development, and open it in your browser.
-
-**csv**
-
-The csv files, if any are present in the repo, are in the 'csv_output_folder' folder. The file with latest date should match the data in main.html. To make sure, compare the range in the filename of the csv to the title of the graph, when you open it in your browser.
 
 ------
 
@@ -69,6 +69,7 @@ For comparison, 8 blows up to a perfect n-cube - each dimension reading a value 
 So we can make a comparison between composite objects, based on the symmetry of their prime factorization n-cubes.
 
 As a comparison tool, let's calculate and assign a value to that symmetry. The chosen methods is the following:
+
 * calculate the prime factors of the number
 * calculate their mean - this represents the dimensions of a perfectly symmetrical n-cube of that volume, if non-integer magnitudes of the sides were allowed
 * calculate the deviation of each side, compared to the mean factor
@@ -84,6 +85,7 @@ Now we can make a comparison between sets of composite numbers.
 List the numbers, calculate the mean deviations and plot them.
 
 ---
+
 ## notes on the data and the graph
 
 **graph**
@@ -91,8 +93,6 @@ List the numbers, calculate the mean deviations and plot them.
 The x-axis are the composite numbers (primes are excluded by default, but can be included by changing the value of include_primes in config.ini to true)
 
 The y-axis are the calculated mean prime factor deviations.
-
-
 
 **antislope**
 As an additional piece of data I added the slope for each data point. However in the early iterations I mistakenly calculated that slope in reverse - run / rise. And it's good that I did, because the values of that antislope are easier to read than the real slope values (4.005 is better than 0.2496). That's why the graph reports the antislope (1 / slope or run/rise). As it will become apparent later, the antislopes have a way of converging nicely to integer values, which can prove useful. I consider this error fortuitous, as I can not imagine I would have easily seen a pattern in the slopes.
@@ -102,8 +102,6 @@ The lines that the points form on the graph are not real lines, but are very clo
 It turns out that if you round the antislope of the points to their closest integer, all numbers fall into families.
 
 The topmost line  have slopes that round down to 4. Not only that, but the antislopes actually slowly converge to 4. The difference starts big (4.471 for 38), but that's to be expected, but at 166 the antislope is below 4.1 and at 1706 it drops below 4.01.
-
-
 
 The antislopes in the next line converge to 6q the next - 9, then 10 and so on.
 
@@ -131,8 +129,6 @@ This, practically, means that each line is a modulo N family, where N is a posit
 - Why the integer antislope is 4, 6, 9...? It probably relates to the remainder when removing the largest prime factor, but I have yet to find how. (Just to be sure, I looked in OEIS for the first 10 integer antislopes - 4, 6, 9, 10, 13, 14, 20, 21, 22, 26 - and did not find a matching sequence)
 - Rate of converges to those limits - why converge at all and why always from above?
 
-
-
 **PROBLEM**
 
 The 'integer antislope' concept hits a limit pretty soon, which means that the converging behaviour is questionable.
@@ -147,6 +143,7 @@ But thus far it seemed that the higher this divisibility factor, the higher the 
 The problem is that 7183 has an antislope of 22.377 and 7190 has an antislope 22.610, which puts the larger number on a lower integer antislope line. More importantly, it also means that both converge to 22.
 
 ---
+
 # notes on the code and the graph
 
 **beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, and 1-100000 run takes more than 30 min. If at some point I feel the need to generate frequently larger datasets, I'll work on optimizing the code for speed.

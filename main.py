@@ -43,7 +43,7 @@ include_primes = True if config.get(
 create_csv = config.get('run', 'crate_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
-graph_value = config.get('graph', 'value')
+graph_mode = config.get('graph', 'mode')
 
 
 def run(lowerbound=2, upperbound=10):
@@ -52,11 +52,12 @@ def run(lowerbound=2, upperbound=10):
     global use_bucket_colorization
     global palette_name
     global palette
-    global graph_value
+    global graph_mode
 
     start = datetime.utcnow()
     logger.info(f'Start at {start}')
     logger.info(f'* Range [{lowerbound}..{upperbound}]')
+    logger.info(f'* Mode: "{graph_mode}"')
     include_primes_message = '* Primes included' if include_primes else '* Primes NOT included'
     logger.info(include_primes_message)
     create_csv_message = '* CSV output included' if create_csv else '* No CVS output'
@@ -139,9 +140,9 @@ def create_visualization(number_list: List[Number]):
     primes_included_text = " Primes included" if include_primes else " Primes excluded"
 
     graph_params = {}
-    graph_params['title'] = mappings.graph_title[graph_value].format(
+    graph_params['title'] = mappings.graph_title[graph_mode].format(
         data_dict['number'][0], data_dict['number'][-1]) + primes_included_text
-    graph_params['y_axis_label'] = mappings.y_axis_label[graph_value]
+    graph_params['y_axis_label'] = mappings.y_axis_label[graph_mode]
     graph_params['width'] = plot_width
     graph_params['height'] = plot_height
 
@@ -168,7 +169,7 @@ def create_visualization(number_list: List[Number]):
     graph_point_size = int(config.get('graph', 'point_size'))
 
     graph_params['type'] = 'scatter'
-    graph_params['y_value'] = mappings.y_axis_values[graph_value]
+    graph_params['y_value'] = mappings.y_axis_values[graph_mode]
     graph_params['graph_point_size'] = graph_point_size
     graph_params['use_bucket_colorization'] = use_bucket_colorization
     if use_bucket_colorization:
@@ -179,22 +180,25 @@ def create_visualization(number_list: List[Number]):
     graph = create_graph(graph, data, graph_params)
 
     # [x] 'hard copy'
+    graph_mode_chunk = mappings.graph_mode_filename_chunk[graph_mode]
+    timestamp_format = generate_timestamp()
+    timestamp = datetime.utcnow().strftime(timestamp_format)
+    primes_included = 'primes_' if include_primes else 'no_primes_'
+    hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
+        '_' + graph_mode_chunk + '_' + primes_included + '_' + timestamp
+    csv_output_folder = 'output'
     if create_csv:
-        csv_output_folder = 'csv_output_folder'
+        full_hard_copy_filename = hard_copy_filename + '.csv'
         path = csv_output_folder + '\\'
         prep_output_folder(csv_output_folder)
-
-        timestamp_format = generate_timestamp()
-        timestamp = datetime.utcnow().strftime(timestamp_format)
-        primes_included = 'primes_' if include_primes else 'no_primes_'
-        hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
-            '_' + primes_included + '_' + timestamp + '.csv'
-        data_df.to_csv(path + hard_copy_filename)
-        logger.info(f'Data saved as {hard_copy_filename}')
+        data_df.to_csv(path + full_hard_copy_filename)
+        logger.info(f'Data saved as {full_hard_copy_filename}')
 
     # [x] show
     logger.info('Graph generated')
     show(graph)
+
+    stash_graph_html(csv_output_folder, hard_copy_filename)
 
 
 def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> figure:
@@ -225,6 +229,14 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
 
     return graph
 
+
+def stash_graph_html(csv_output_folder, graph_filename: str):
+    full_stashed_filename = csv_output_folder + '\\' + graph_filename + '.html'
+    with open('main.html', 'r') as html_output_file:
+        content = html_output_file.read()
+        with open(full_stashed_filename, 'wt') as stashed_html_output_file:
+            stashed_html_output_file.write(content)
+    pass
 
 def get_palette(palette_name: str) -> palette:
     '''
