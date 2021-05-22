@@ -37,7 +37,7 @@ upperbound = int(config.get('range', 'upperbound'))
 
 # RUN parameters
 use_bucket_colorization = True if config.get(
-    'run', 'use_color_buckets') == 'true' else False
+    'graph', 'use_color_buckets') == 'true' else False
 include_primes = True if config.get(
     'run', 'include_primes') == 'true' else False
 create_csv = config.get('run', 'crate_csv')
@@ -177,15 +177,15 @@ def create_visualization(number_list: List[Number]):
         graph_params['factors_list'] = get_factors(number_of_colors)
     graph_params['palette'] = palette
 
-    graph = create_graph(graph, data, graph_params)
+    graph, coloring = create_graph(graph, data, graph_params)
 
     # [x] 'hard copy'
     graph_mode_chunk = mappings.graph_mode_filename_chunk[graph_mode]
     timestamp_format = generate_timestamp()
     timestamp = datetime.utcnow().strftime(timestamp_format)
-    primes_included = 'primes_' if include_primes else 'no_primes_'
+    primes_included = 'primes' if include_primes else 'no_primes'
     hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
-        '_' + graph_mode_chunk + '_' + primes_included + '_' + timestamp
+        '_' + graph_mode_chunk + '_' + primes_included + '_' + coloring + '_' + timestamp
     csv_output_folder = 'output'
     if create_csv:
         full_hard_copy_filename = hard_copy_filename + '.csv'
@@ -206,6 +206,7 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
     Creates a scatter plot by given parameters
     '''
 
+    coloring = ''
     use_bucket_colorization = graph_params['use_bucket_colorization']
     if use_bucket_colorization:
         number_of_colors = graph_params['number_of_colors']
@@ -221,13 +222,15 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
         logger.info(f'{number_of_colors} color buckets created')
         graph.scatter(source=data, x='number', y=y_value, color={
                       'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
+        coloring = palette_name.lower()
     else:
         base_color = '#3030ff'
         logger.info('Base coloring')
         graph.scatter(source=data, x='number', y=y_value,
                       color=base_color, size=graph_point_size)
+        coloring = 'monocolor'
 
-    return graph
+    return graph, coloring
 
 
 def stash_graph_html(csv_output_folder, graph_filename: str):
@@ -236,7 +239,7 @@ def stash_graph_html(csv_output_folder, graph_filename: str):
         content = html_output_file.read()
         with open(full_stashed_filename, 'wt') as stashed_html_output_file:
             stashed_html_output_file.write(content)
-    pass
+
 
 def get_palette(palette_name: str) -> palette:
     '''
@@ -364,7 +367,7 @@ def prep_output_folder(folder_name: str):
         os.mkdir(folder_name)
         return
     else:
-        if config.get('run', 'reset_csv_data'):
+        if config.get('run', 'reset_output_data') == 'true':
             for root, directories, files in os.walk(folder_name):
                 for file in files:
                     file_path = root + '/' + file
