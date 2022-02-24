@@ -56,7 +56,7 @@ In the 12 example let's start with
 * blow it up a bit and the object becomes [ 2 x 6 ], 'surface area' = 16 (essentially the perimeter of a rectangle of 2 x 6)
 * blow it up even more to a [ 2 x 2 x 3 ] and the 'surface area' becomes 32 (2 * 2 x 2, 4 * 2 x 3)
 
-It is not hard to show that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular n-cube for that number is the closest as you can get to a perfect n-cube with that volume.
+It is not hard to show (I should take up and show that) that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular n-cube for that number is the closest as you can get to a perfect n-cube with that volume.
 The prime factorization of each composite number is the factorization that has the most factors for that number - you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number.
 
 This all means that the prime factorization of the composite number gives the dimensions of the most 'blown up' possible object of that volume.
