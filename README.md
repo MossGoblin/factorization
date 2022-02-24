@@ -2,7 +2,7 @@
 
 **graph**
 
-The mail.html file in the root folder is exported by the bokeh visualization library on each run.
+The main.html file in the root folder is exported by the bokeh visualization library on each run.
 
 The 'output' folder contains pair of files, saved from previous runs - a .csv file and a .html file with the same names. The .csv files contains the collated data, the .html file is the graph itself.
 
