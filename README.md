@@ -4,7 +4,7 @@
 
 The main.html file in the root folder is exported by the bokeh visualization library on each run.
 
-The 'output' folder contains pair of files, saved from previous runs - a .csv file and a .html file with the same names. The .csv files contains the collated data, the .html file is the graph itself.
+The 'output' folder contains a pair of files, saved from previous runs - a .csv file and a .html file with the same names. The .csv files contains the collated data, the .html file is the graph itself.
 
 The main html file can be viewed by opening the following link:
 
@@ -52,9 +52,9 @@ Our case with composite objects is the reverse - trying to maximize the surface 
 The n-dimensional object, produced by projecting each factor of a composite object into a separate dimension, is one such blown up membrane. All factorizations have the same volume, but have different surface areas. Switching through the different factorization objects of the same volume while increasing the surface area is like trying to blow up the membrane that holds that volume as much as possible. If effect the volume will try to redistribute itself such that the surface area is as large as possible.
 In the 12 example let's start with
 
-* [ 12 ] , surface area = 12 (only one face, measure 12)
-* blow it up a bit and the object becomes [ 2 x 6 ], surface area = 16 (essentially the perimeter of a rectangle of 2 x 6)
-* blow it up even more to a [ 2 x 2 x 3 ] and the surface area becomes 34
+* [ 12 ] , surface area = 12 (in 1 dimension the 'surface area' is the length, as we have only one 'face', measure 12)
+* blow it up a bit and the object becomes [ 2 x 6 ], 'surface area' = 16 (essentially the perimeter of a rectangle of 2 x 6)
+* blow it up even more to a [ 2 x 2 x 3 ] and the 'surface area' becomes 32 (2 * 2 x 2, 4 * 2 x 3)
 
 It is not hard to show that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular n-cube for that number is the closest as you can get to a perfect n-cube with that volume.
 The prime factorization of each composite number is the factorization that has the most factors for that number - you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number.
