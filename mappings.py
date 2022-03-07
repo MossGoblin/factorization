@@ -1,7 +1,7 @@
 graph_title = {
-    "mean_deviation": "Mean prime factor deviations for numbers {} to {}",
-    "antislope": "Antislope for numbers {} to {}.",
-    "mean_factor": "Mean prime factor for numbers {} to {}."
+    "mean_deviation": "Mean prime factor deviations for numbers {} to {} /",
+    "antislope": "Antislope for numbers {} to {} /",
+    "mean_factor": "Mean prime factor for numbers {} to {} /"
 }
 
 y_axis_values = {

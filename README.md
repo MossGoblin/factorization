@@ -40,30 +40,33 @@ Example:
 * 2 x 6
 * 2 x 2 x 3
 
-Each of the factorizations represents an n-dimensional cube, where n is the number of factors in that particular factorization. Each  n-cube for the same composite number can be said to have the same volume (in this example 12) and can also be assigned value for surface.
+Each of the factorizations represents an n-dimensional cube, where n is the number of factors in that particular factorization. Each  n-cube for the same composite number can be said to have the same size (in this example 12) and can also be assigned value for surface.
+
+*Both size and surface here are used in a general meaning. For a 2-D object, for example, 'size' is the area of the object and ''surface' is the perimeter. For 3-D 'size' is the volume and 'sufrace' is the area.*
 
 Let's have a look only at the prime factorizations of composite objects - in this case 2 x 2 x 3.
-This object has volume of 12 and a surface of 34.
+This object has size 12 and a surface of 34.
 
-Consider blowing up a non-elastic balloon. Blowing up a rigid airtight membrane is a process of trying to have it encompass as larger volume as possible, when you have a fixed surface.
+Consider blowing up a non-elastic balloon. Blowing up a rigid air-tight membrane is a process of trying to have it encompass as larger volume as possible, when you have a fixed surface area.
 
-Our case with composite objects is the reverse - trying to maximize the surface of a fixed volume.
+Our case with composite objects is the reverse - trying to maximize the surface area of an object with a fixed size.
 
-The n-dimensional object, produced by projecting each factor of a composite object into a separate dimension, is one such blown up membrane. All factorizations have the same volume, but have different surface areas. Switching through the different factorization objects of the same volume while increasing the surface area is like trying to blow up the membrane that holds that volume as much as possible. If effect the volume will try to redistribute itself such that the surface area is as large as possible.
-In the 12 example let's start with
+The n-dimensional object, produced by projecting each factor of a composite object into a separate dimension, is one such blown up membrane. All factorizations have the same size, but have different surface areas. Switching through the different factorization objects of the same size while increasing the surface area is like trying to blow up as much as possible the membrane that holds that size. If effect the size will try to redistribute itself such that the surface area is as large as possible.
+In the 12 example let's start with:
 
 * [ 12 ] , surface area = 12 (in 1 dimension the 'surface area' is the length, as we have only one 'face', measure 12)
-* blow it up a bit and the object becomes [ 2 x 6 ], 'surface area' = 16 (essentially the perimeter of a rectangle of 2 x 6)
+* blow it up a bit and the object becomes [ 4 x 3 ], 'surface area' = 14 (essentially the perimeter of a rectangle of 4 x 3); It could also be [ 2 x 6 ] with 'surface area' = 16
 * blow it up even more to a [ 2 x 2 x 3 ] and the 'surface area' becomes 32 (2 * 2 x 2, 4 * 2 x 3)
 
-It is not hard to show (I should take up and show that) that the more factors you use, the larger the area. Which means that the prime factorization has the largest surface area for object of that volume, i.e. this particular n-cube for that number is the closest as you can get to a perfect n-cube with that volume.
 The prime factorization of each composite number is the factorization that has the most factors for that number - you can produce each other factorization of the number by multiplying two or more prime factors together, which reduces their total number.
 
-This all means that the prime factorization of the composite number gives the dimensions of the most 'blown up' possible object of that volume.
+And since the more factors you use, the larger the area, this means that the prime factorization has the largest surface area for object of that size, i.e. this particular n-cube for that number is the closest as you can get to a perfect n-cube with that size.
+
+This all means that the prime factorization of the composite number gives the dimensions of the most 'blown up' possible object of that size.
 
 ### Next.
 
-It is clear that 2 x 2 x 3 is not the most symmetrical object ever, but that's a close to symmetry as it can be done with volume 12.
+It is clear that 2 x 2 x 3 is not the most symmetrical object ever, but that's a close to symmetry as it can be done with size 12.
 For comparison, 8 blows up to a perfect n-cube - each dimension reading a value of 2.
 
 So we can make a comparison between composite objects, based on the symmetry of their prime factorization n-cubes.
@@ -71,14 +74,16 @@ So we can make a comparison between composite objects, based on the symmetry of 
 As a comparison tool, let's calculate and assign a value to that symmetry. The chosen methods is the following:
 
 * calculate the prime factors of the number
-* calculate their mean - this represents the dimensions of a perfectly symmetrical n-cube of that volume, if non-integer magnitudes of the sides were allowed
+* calculate their mean - this represents the dimensions of a perfectly symmetrical n-cube of that size, if non-integer magnitudes of the sides were allowed (for 12 that would be a cube with an edge length of appr. 2.2894)
 * calculate the deviation of each side, compared to the mean factor
 * get the mean of the deviations
 
-If we use this method to compare two of the factorizations of 12, we'll see that
-2 x 6 has a mean deviation of 4, while
-2x 2x 3 has a mean deviation of 3.25 - the most symmetrical n-cube 12 can do
-(again, 8 has a mean deviation of 0, because all of it's factors are equal, i.e. they equal the mean)
+If we use this method to compare two of the factorizations of 12 (with a prime factor mean of 2.33 (rec.)), we'll see that
+2 x 6 has a mean deviation of 2, while
+
+3 x 4 has a mean deviation of 1.66 (rec.)
+2 x 2 x 3 has a mean deviation of 0.44 (rec.) - the most symmetrical n-cube 12 can do
+(again, for comparison, 8 equals 2 x 2 x 2, which has a mean deviation of 0, because all of it's factors are equal, i.e. they equal the mean).
 
 Now we can make a comparison between sets of composite numbers.
 
@@ -95,15 +100,13 @@ The x-axis are the composite numbers (primes are excluded by default, but can be
 The y-axis are the calculated mean prime factor deviations.
 
 **antislope**
-As an additional piece of data I added the slope for each data point. However in the early iterations I mistakenly calculated that slope in reverse - run / rise. And it's good that I did, because the values of that antislope are easier to read than the real slope values (4.005 is better than 0.2496). That's why the graph reports the antislope (1 / slope or run/rise). As it will become apparent later, the antislopes have a way of converging nicely to integer values, which can prove useful. I consider this error fortuitous, as I can not imagine I would have easily seen a pattern in the slopes.
+As an additional piece of data I added the slope for each data point. The main goal of the graph was so see how much a number deviates from its ideal 'blow-up'. However in the early iterations I mistakenly calculated that slope in reverse - run / rise. And it's good that I did, because the values of that antislope are easier to read than the real slope values (4.005 is better than 0.2496). That's why the graph reports the antislope (1/slope a.k.a. run/rise). As it will become apparent later, the antislopes (well, and the slopes, really) have a way of converging nicely to integer values, which can prove useful. I consider this error fortuitous, as I can not imagine I would have easily seen a pattern in the values of the slopes.
 
 The lines that the points form on the graph are not real lines, but are very close.
 
 It turns out that if you round the antislope of the points to their closest integer, all numbers fall into families.
 
-The topmost line  have slopes that round down to 4. Not only that, but the antislopes actually slowly converge to 4. The difference starts big (4.471 for 38), but that's to be expected, but at 166 the antislope is below 4.1 and at 1706 it drops below 4.01.
-
-The antislopes in the next line converge to 6q the next - 9, then 10 and so on.
+The topmost line have slopes that round down to 4. Not only that, but the antislopes actually slowly converge to 4. The difference starts big (4.471 for 38), but that's to be expected, but at 166 the antislope is below 4.1 and at 1706 it drops below 4.01.
 
 There are similar lines below the top one that converge on higher antislopes - the next one being 6, then 9, then 10 and so on.
 
@@ -126,7 +129,7 @@ This, practically, means that each line is a modulo N family, where N is a posit
 
 **TO BE EXPLORED**
 
-- Why the integer antislope is 4, 6, 9...? It probably relates to the remainder when removing the largest prime factor, but I have yet to find how. (Just to be sure, I looked in OEIS for the first 10 integer antislopes - 4, 6, 9, 10, 13, 14, 20, 21, 22, 26 - and did not find a matching sequence)
+- Why the integer antislope is 4, 6, 9...? It probably relates to the remainder when removing the largest prime factor, but I have yet to find how. (Just to be sure (and a bit lazy), I looked in OEIS for the first 10 integer antislopes - 4, 6, 9, 10, 13, 14, 20, 21, 22, 26 - and did not find a matching sequence)
 - Rate of converges to those limits - why converge at all and why always from above?
 
 **PROBLEM**
@@ -154,5 +157,3 @@ As a result the first one or two lines are different colors, then you have 2 wit
 Given that the colors are only for graph readability, I don't plan to optimize that further for now.
 
 Additionally, if you run the script for a range that would require more than 11 color buckets, it will default to the monocolour version.
-
-**'slope' named variables**: as mentioned, the value of slope was initially calculated in reverse, by mistake; afterwards these inverse values actually proved very useful, so the concept was kept as it is and renamed to 'antislope'; however, for simplicity, the related variables in the code remain 'slope'; they may be renamed 'anti-' in future iterations

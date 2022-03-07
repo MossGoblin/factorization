@@ -21,7 +21,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 # create formatter
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    "%(asctime)s - %(name)s - [%(levelname)-5s] %(message)s")
 # add formatter to ch
 ch.setFormatter(formatter)
 # add ch to logger
@@ -85,7 +85,7 @@ def create_visualization(number_list: List[Number]):
     '''
 
     if use_bucket_colorization:
-        # [x] separate numbers into binary buckets by closest integer to number.slope
+        # [x] separate numbers into binary buckets by closest integer to number.anti_slope
         # [x] get primary slope buckets
         buckets_list, slope_buckets = get_slope_buckets(number_list)
 
@@ -114,9 +114,9 @@ def create_visualization(number_list: List[Number]):
                 'true' if number.is_prime else 'false')
         data_dict['prime_factors'].append(
             int_list_to_str(number.prime_factors))
-        data_dict['mean'].append(number.prime_mean)
+        data_dict['mean'].append(number.ideal_factor)
         data_dict['deviation'].append(number.mean_deviation)
-        data_dict['one_over_slope'].append(number.slope)
+        data_dict['one_over_slope'].append(number.anti_slope)
         if number.value == 1:
             data_dict['primes_before_largest'].append(0)
             data_dict['largest_prime_factor'].append(0)
@@ -156,7 +156,7 @@ def create_visualization(number_list: List[Number]):
     if include_primes:
         tooltips.append(('prime', '@is_prime'))
     tooltips.extend([('factors', '@prime_factors'),
-                    ('mean factor value', '@mean'),
+                    ('ideal factor value', '@mean'),
                     ('mean factor deviation', '@deviation'),
                     ('anti-slope', '@one_over_slope'),
                     ('prime factors before largest', '@primes_before_largest'),
@@ -354,7 +354,7 @@ def get_slope_buckets(number_list: List) -> Tuple:
         if number.is_prime and not include_primes:
             continue
         else:
-            slope_int = round(number.slope)
+            slope_int = round(number.anti_slope)
             if slope_int not in buckets_list:
                 buckets_list.append(slope_int)
                 slope_buckets[slope_int] = []

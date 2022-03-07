@@ -1,6 +1,6 @@
 # smalls
 
-- [ ] add Fire() run option
+- [ ] add Fire() run option ?
 - [x] add main.html renaming after generating
 - [ ] align binary buckets with graph mode
 - [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
