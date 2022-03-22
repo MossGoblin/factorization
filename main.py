@@ -99,7 +99,7 @@ def create_visualization(number_list: List[Number]):
     if include_primes:
         data_dict['is_prime'] = []
     data_dict['prime_factors'] = []
-    data_dict['mean'] = []
+    data_dict['ideal'] = []
     data_dict['deviation'] = []
     data_dict['one_over_slope'] = []
     data_dict['primes_before_largest'] = []
@@ -114,7 +114,7 @@ def create_visualization(number_list: List[Number]):
                 'true' if number.is_prime else 'false')
         data_dict['prime_factors'].append(
             int_list_to_str(number.prime_factors))
-        data_dict['mean'].append(number.ideal_factor)
+        data_dict['ideal'].append(number.ideal_factor)
         data_dict['deviation'].append(number.mean_deviation)
         data_dict['one_over_slope'].append(number.anti_slope)
         if number.value == 1:
@@ -156,7 +156,7 @@ def create_visualization(number_list: List[Number]):
     if include_primes:
         tooltips.append(('prime', '@is_prime'))
     tooltips.extend([('factors', '@prime_factors'),
-                    ('ideal factor value', '@mean'),
+                    ('ideal factor value', '@ideal'),
                     ('mean factor deviation', '@deviation'),
                     ('anti-slope', '@one_over_slope'),
                     ('prime factors before largest', '@primes_before_largest'),
