@@ -1,6 +1,7 @@
 from asyncio.log import logger
 from datetime import datetime
 import math
+import os
 from typing import Dict, List, Tuple
 from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
 from bokeh.plotting import figure, show
@@ -13,8 +14,9 @@ from bokeh.models import ColumnDataSource, CategoricalColorMapper
 import mappings
 from tools import SettingsHolder
 
+
 class Processor():
-    def __init__(self, logger, config_file = 'config.ini', mode=0) -> None:
+    def __init__(self, logger, config_file='config.ini', mode=0) -> None:
         self.cfg = SettingsHolder(config_file)
         self.logger = logger
         self.mode = mode
@@ -22,7 +24,8 @@ class Processor():
     def run(self) -> None:
         start = datetime.utcnow()
         self.logger.info(f'Start at {start}')
-        self.logger.info(f'* Range [{self.cfg.lowerbound}..{self.cfg.upperbound}]')
+        self.logger.info(
+            f'* Range [{self.cfg.lowerbound}..{self.cfg.upperbound}]')
         self.logger.info(f'* Mode: {self.cfg.graph_mode}')
         include_primes_message = '* Primes included' if self.cfg.include_primes else '* Primes NOT included'
         self.logger.info(include_primes_message)
@@ -32,18 +35,18 @@ class Processor():
         bucket_colorization_message = f'* Bucket colorization enabled: {palette_name_string}' if self.cfg.use_bucket_colorization else '* Monocolor enabled'
         self.logger.info(bucket_colorization_message)
         palette = self.get_palette(palette_name=self.cfg.palette_name)
-    
+
         # [x] iterate between bounds and cache numbers
-        number_list = self.generate_number_list(lowerbound=self.cfg.lowerbound, upperbound=self.cfg.upperbound)
-        self.logger.info(f'Numbers generated {self.cfg.lowerbound}..{self.cfg.upperbound}')
-    
+        number_list = self.generate_number_list(
+            lowerbound=self.cfg.lowerbound, upperbound=self.cfg.upperbound)
+        self.logger.info(
+            f'Numbers generated {self.cfg.lowerbound}..{self.cfg.upperbound}')
 
         # [x] create visualization
         self.create_visualization(number_list)
         end = datetime.utcnow()
         self.logger.info(f'End at {end}')
         self.logger.info(f'Total time: {end-start}')
-
 
     def get_palette(self, palette_name: str):
         '''
@@ -66,7 +69,6 @@ class Processor():
         else:
             return Turbo
 
-
     def generate_number_list(self, lowerbound=2, upperbound=10):
         '''
         Generate a list of Number objects
@@ -83,7 +85,6 @@ class Processor():
             number_list.append(number)
         return number_list
 
-
     def create_visualization(self, number_list: List[Number]):
         '''
         Prepares the generated number data and uses it to create the visualization
@@ -95,7 +96,8 @@ class Processor():
             buckets_list, slope_buckets = self.get_slope_buckets(number_list)
 
             # [x] pour numbers into binary buckets
-            binary_buckets = self.get_binary_buckets(sorted(buckets_list), slope_buckets)
+            binary_buckets = self.get_binary_buckets(
+                sorted(buckets_list), slope_buckets)
 
         # [x] prep visualization data
         data_dict = {}
@@ -131,7 +133,8 @@ class Processor():
                 data_dict['primes_before_largest'].append(
                     self.int_list_to_str(primes_before_largest))
                 data_dict['largest_prime_factor'].append(largest_prime_factor)
-                data_dict['div_family'].append(number.value / largest_prime_factor)
+                data_dict['div_family'].append(
+                    number.value / largest_prime_factor)
             if self.cfg.use_bucket_colorization:
                 data_dict['color_bucket'].append(
                     self.get_bucket_index(binary_buckets, number.value))
@@ -227,7 +230,6 @@ class Processor():
 
         return buckets_list, slope_buckets
 
-
     def get_binary_buckets(self, sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
         '''
         Split numbers into binary buckets by antislope
@@ -239,7 +241,7 @@ class Processor():
         '''
 
         number_of_unassigned_buckets = len(sorted_buckets_list)
-        number_of_binary_buckets = self.get_previous_power_of_two(
+        number_of_binary_buckets = self.get_next_power_of_two(
             number_of_unassigned_buckets)
 
         # create binary bucket index map
@@ -262,8 +264,7 @@ class Processor():
 
         return binary_slope_buckets
 
-
-    def get_previous_power_of_two(self, value: int):
+    def get_next_power_of_two(self, value: int):
         '''
         Get the highest poewr of 2 that's loewr than a provide number
         '''
@@ -273,7 +274,7 @@ class Processor():
         while running_product < value:
             running_product = running_product * 2
             counter = counter + 1
-        return counter - 1
+        return counter
 
     def get_binary_bucket_index(self, slope: int, binary_bucket_index_map: Dict) -> int:
         '''
@@ -283,7 +284,6 @@ class Processor():
         for bucket_index, slope_list in binary_bucket_index_map.items():
             if slope in slope_list:
                 return bucket_index
-
 
     def get_factors(self, number_of_colors: int) -> List:
         '''
@@ -381,3 +381,23 @@ class Processor():
             with open(full_stashed_filename, 'wt') as stashed_html_output_file:
                 stashed_html_output_file.write(content)
         logger.info(f'Graph saved as {full_stashed_filename}')
+
+    def split_prime_factors(self, int_list: List[int]) -> int:
+        sorted_int_list = sorted(int_list)
+        return sorted_int_list[:-1], sorted_int_list[-1]
+
+    def prep_output_folder(self, folder_name: str):
+        '''
+        Prepare folder for output csv files
+        '''
+
+        if not os.path.exists(folder_name):
+            os.mkdir(folder_name)
+            return
+        else:
+            if self.cfg.reset_output_data:
+                for root, directories, files in os.walk(folder_name):
+                    for file in files:
+                        file_path = root + '/' + file
+                        os.remove(file_path)
+            return
