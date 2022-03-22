@@ -1,5 +1,6 @@
 from asyncio.log import logger
 from datetime import datetime
+import json
 import math
 import os
 from typing import Dict, List, Tuple
@@ -10,16 +11,16 @@ from number import Number
 import pandas as pd
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
+from configparser import ConfigParser
+from bokeh.palettes import Turbo
 
 import mappings
-from tools import SettingsHolder
 
 
 class Processor():
-    def __init__(self, logger, config_file='config.ini', mode=0) -> None:
+    def __init__(self, logger, config_file='config.ini') -> None:
         self.cfg = SettingsHolder(config_file)
         self.logger = logger
-        self.mode = mode
 
     def run(self) -> None:
         start = datetime.utcnow()
@@ -37,8 +38,7 @@ class Processor():
         palette = self.get_palette(palette_name=self.cfg.palette_name)
 
         # [x] iterate between bounds and cache numbers
-        number_list = self.generate_number_list(
-            lowerbound=self.cfg.lowerbound, upperbound=self.cfg.upperbound)
+        number_list = self.generate_number_list()
         self.logger.info(
             f'Numbers generated {self.cfg.lowerbound}..{self.cfg.upperbound}')
 
@@ -69,11 +69,19 @@ class Processor():
         else:
             return Turbo
 
-    def generate_number_list(self, lowerbound=2, upperbound=10):
+    def generate_number_list(self):
         '''
         Generate a list of Number objects
         '''
+        if self.cfg.mode == 'continuous':
+            return self.generate_continuous_number_list()
+        else:
+            msg = f'Mode {self.cfg.mode} not yet available'
+            raise NotImplemented(msg)
 
+    def generate_continuous_number_list(self):
+        lowerbound = self.cfg.lowerbound
+        upperbound = self.cfg.upperbound
         if lowerbound < 2:
             lowerbound = 2
 
@@ -329,7 +337,7 @@ class Processor():
 
     def generate_timestamp(self):
         '''
-        Generate timestamp string, depending on the desired granularity, set in config.ini
+        Generate timestamp string, depending on the desired granularity, set in the config file
         '''
 
         timestamp_format = ''
@@ -401,3 +409,40 @@ class Processor():
                         file_path = root + '/' + file
                         os.remove(file_path)
             return
+
+
+class SettingsHolder():
+    def __init__(self, config_file='config.ini') -> None:
+        self.config_file = config_file
+        self.config = ConfigParser()
+        self.read_settings(self.config_file)
+
+    def read_settings(self, config_file='config.ini'):
+        if not config_file:
+            config_file = self.config_file
+        self.config.read(self.config_file)
+
+        # RANGE
+        self.mode = self.config.get('range', 'mode')
+        self.lowerbound = int(self.config.get('range', 'lowerbound'))
+        self.upperbound = int(self.config.get('range', 'upperbound'))
+        self.families = json.loads(self.config.get('range', 'families'))
+
+        # RUN
+        self.create_csv = self.config.get('run', 'crate_csv')
+        self.hard_copy_timestamp_granularity = int(
+            self.config.get('run', 'hard_copy_timestamp_granularity'))
+        self.reset_output_data = True if self.config.get(
+            'run', 'reset_output_data') == 'true' else False
+        self.include_primes = True if self.config.get(
+            'run', 'include_primes') == 'true' else False
+
+        # GRAPH
+        self.graph_mode = self.config.get('graph', 'mode')
+        self.graph_width = int(self.config.get('graph', 'width'))
+        self.graph_height = int(self.config.get('graph', 'height'))
+        self.graph_point_size = int(self.config.get('graph', 'point_size'))
+        self.use_bucket_colorization = True if self.config.get(
+            'graph', 'use_color_buckets') == 'true' else False
+        self.palette = Turbo
+        self.palette_name = self.config.get('graph', 'palette')

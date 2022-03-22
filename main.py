@@ -15,10 +15,10 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-def process():
+def main():
     pcs = Processor(logger, 'config.ini', 0)
     pcs.run()
 
 
 if __name__ == "__main__":
-    process()
+    main()

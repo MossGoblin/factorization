@@ -19,6 +19,7 @@ def get_prime_factors(value) -> List:
 def get_ideal_factor(value: int, prime_factors: List[int]) -> float:
     return math.pow(value, 1/len(prime_factors))
 
+
 def get_mean_deviation(prime_factors: List[int], ideal_factor: float) -> float:
     deviations_sum = 0
     for prime_factor in prime_factors:
