@@ -16,7 +16,7 @@ logger.addHandler(ch)
 
 
 def main():
-    pcs = Processor(logger, 'config.ini', 0)
+    pcs = Processor(logger, 'config.ini')
     pcs.run()
 
 

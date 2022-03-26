@@ -4,9 +4,8 @@ import json
 import math
 import os
 from typing import Dict, List, Tuple
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
+from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Inferno256
 from bokeh.plotting import figure, show
-import pyprimes as pp
 from number import Number
 import pandas as pd
 from bokeh import models as models
@@ -15,7 +14,7 @@ from configparser import ConfigParser
 from bokeh.palettes import Turbo
 
 import mappings
-
+import utils
 
 class Processor():
     def __init__(self, logger, config_file='config.ini') -> None:
@@ -25,8 +24,14 @@ class Processor():
     def run(self) -> None:
         start = datetime.utcnow()
         self.logger.info(f'Start at {start}')
-        self.logger.info(
-            f'* Range [{self.cfg.lowerbound}..{self.cfg.upperbound}]')
+        self.logger.info(f'* Mode: {self.cfg.mode}')
+        if self.cfg.mode == 'continuous':
+            self.logger.info(
+                f'* Range [{self.cfg.lowerbound}..{self.cfg.upperbound}]')
+        elif self.cfg.mode == 'families':
+            self.logger.info(f'Families: {self.cfg.families}')
+            self.logger.info(f'Include all identities: {self.cfg.include_all_identities}')
+            self.logger.info(f'Families size: {self.cfg.family_count}')
         self.logger.info(f'* Mode: {self.cfg.graph_mode}')
         include_primes_message = '* Primes included' if self.cfg.include_primes else '* Primes NOT included'
         self.logger.info(include_primes_message)
@@ -40,7 +45,7 @@ class Processor():
         # [x] iterate between bounds and cache numbers
         number_list = self.generate_number_list()
         self.logger.info(
-            f'Numbers generated {self.cfg.lowerbound}..{self.cfg.upperbound}')
+            f'Numbers generated')
 
         # [x] create visualization
         self.create_visualization(number_list)
@@ -74,24 +79,9 @@ class Processor():
         Generate a list of Number objects
         '''
         if self.cfg.mode == 'continuous':
-            return self.generate_continuous_number_list()
+            return utils.generate_continuous_number_list(self.cfg.lowerbound, self.cfg.upperbound, self.cfg.include_primes)
         else:
-            msg = f'Mode {self.cfg.mode} not yet available'
-            raise NotImplemented(msg)
-
-    def generate_continuous_number_list(self):
-        lowerbound = self.cfg.lowerbound
-        upperbound = self.cfg.upperbound
-        if lowerbound < 2:
-            lowerbound = 2
-
-        number_list = []
-        for value in range(lowerbound, upperbound + 1):
-            if pp.isprime(value) and not self.cfg.include_primes:
-                continue
-            number = Number(value=value)
-            number_list.append(number)
-        return number_list
+            return utils.generate_number_families(self.cfg.families, self.cfg.include_all_identities, self.cfg.family_count)
 
     def create_visualization(self, number_list: List[Number]):
         '''
@@ -115,10 +105,10 @@ class Processor():
         data_dict['prime_factors'] = []
         data_dict['ideal'] = []
         data_dict['deviation'] = []
-        data_dict['one_over_slope'] = []
-        data_dict['primes_before_largest'] = []
-        data_dict['largest_prime_factor'] = []
-        data_dict['div_family'] = []
+        data_dict['anti_slope'] = []
+        data_dict['family_factors'] = []
+        data_dict['identity_factor'] = []
+        data_dict['factor_family'] = []
         if self.cfg.use_bucket_colorization:
             data_dict['color_bucket'] = []
         for number in number_list:
@@ -130,18 +120,18 @@ class Processor():
                 self.int_list_to_str(number.prime_factors))
             data_dict['ideal'].append(number.ideal_factor)
             data_dict['deviation'].append(number.mean_deviation)
-            data_dict['one_over_slope'].append(number.anti_slope)
+            data_dict['anti_slope'].append(number.anti_slope)
             if number.value == 1:
-                data_dict['primes_before_largest'].append(0)
-                data_dict['largest_prime_factor'].append(0)
-                data_dict['div_family'].append(1)
+                data_dict['family_factors'].append(0)
+                data_dict['identity_factor'].append(0)
+                data_dict['factor_family'].append(1)
             else:
                 primes_before_largest, largest_prime_factor = self.split_prime_factors(
                     number.prime_factors)
-                data_dict['primes_before_largest'].append(
+                data_dict['family_factors'].append(
                     self.int_list_to_str(primes_before_largest))
-                data_dict['largest_prime_factor'].append(largest_prime_factor)
-                data_dict['div_family'].append(
+                data_dict['identity_factor'].append(largest_prime_factor)
+                data_dict['factor_family'].append(
                     number.value / largest_prime_factor)
             if self.cfg.use_bucket_colorization:
                 data_dict['color_bucket'].append(
@@ -173,10 +163,10 @@ class Processor():
         tooltips.extend([('factors', '@prime_factors'),
                         ('ideal factor value', '@ideal'),
                         ('mean factor deviation', '@deviation'),
-                        ('anti-slope', '@one_over_slope'),
-                        ('prime factors before largest', '@primes_before_largest'),
-                        ('largest prime factor', '@largest_prime_factor'),
-                        ('division family', '@div_family'),
+                        ('anti-slope', '@anti_slope'),
+                        ('family factors', '@family_factors'),
+                        ('identity factor', '@identity_factor'),
+                        ('family product', '@factor_family'),
                          ])
 
         hover = models.HoverTool(tooltips=tooltips)
@@ -410,6 +400,10 @@ class Processor():
                         os.remove(file_path)
             return
 
+    def create_color_buckets(self):
+        '''
+        Create color buckets for the graph
+        '''
 
 class SettingsHolder():
     def __init__(self, config_file='config.ini') -> None:
@@ -427,6 +421,8 @@ class SettingsHolder():
         self.lowerbound = int(self.config.get('range', 'lowerbound'))
         self.upperbound = int(self.config.get('range', 'upperbound'))
         self.families = json.loads(self.config.get('range', 'families'))
+        self.include_all_identities = json.loads(self.config.get('range', 'include_all_identities'))
+        self.family_count = json.loads(self.config.get('range', 'family_count'))
 
         # RUN
         self.create_csv = self.config.get('run', 'crate_csv')
@@ -446,3 +442,4 @@ class SettingsHolder():
             'graph', 'use_color_buckets') == 'true' else False
         self.palette = Turbo
         self.palette_name = self.config.get('graph', 'palette')
+
