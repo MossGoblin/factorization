@@ -1,3 +1,4 @@
+import collections
 from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
@@ -46,6 +47,9 @@ palette_name = config.get('graph', 'palette')
 graph_mode = config.get('graph', 'mode')
 
 
+PALETTE_MAXIMUM_NUMBER_OF_COLOURS = 11
+
+
 def run(lowerbound=2, upperbound=10):
     global include_primes
     global create_csv
@@ -68,9 +72,9 @@ def run(lowerbound=2, upperbound=10):
     palette = get_palette(palette_name=palette_name)
 
     # [x] iterate between bounds and cache numbers
-    number_list = generate_number_list(
-        lowerbound=lowerbound, upperbound=upperbound)
+    number_list = generate_number_list(lowerbound=lowerbound, upperbound=upperbound)
     logger.info(f'Numbers generated {lowerbound}..{upperbound}')
+    logger.info(f'Total composites: {len(number_list)}')
 
     # [x] create visualization
     create_visualization(number_list)
@@ -87,11 +91,14 @@ def create_visualization(number_list: List[Number]):
     if use_bucket_colorization:
         # [x] separate numbers into binary buckets by closest integer to number.slope
         # [x] get primary slope buckets
-        buckets_list, slope_buckets = get_slope_buckets(number_list)
+        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'antislope', use_rounding = 'full')
+        buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
+        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'division_family', use_rounding = 'full')
 
         # [x] pour numbers into binary buckets
-        binary_buckets = get_binary_buckets(
-            sorted(buckets_list), slope_buckets)
+        sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
+        # binary_buckets = get_binary_buckets(sorted(buckets_list), property_buckets)
+        binary_buckets = get_binary_buckets(sorted(buckets_list), sorted_property_buckets)
 
     # [x] prep visualization data
     data_dict = {}
@@ -116,7 +123,7 @@ def create_visualization(number_list: List[Number]):
             int_list_to_str(number.prime_factors))
         data_dict['mean'].append(number.prime_mean)
         data_dict['deviation'].append(number.mean_deviation)
-        data_dict['one_over_slope'].append(number.slope)
+        data_dict['one_over_slope'].append(number.antislope)
         if number.value == 1:
             data_dict['primes_before_largest'].append(0)
             data_dict['largest_prime_factor'].append(0)
@@ -127,10 +134,10 @@ def create_visualization(number_list: List[Number]):
             data_dict['primes_before_largest'].append(
                 int_list_to_str(primes_before_largest))
             data_dict['largest_prime_factor'].append(largest_prime_factor)
-            data_dict['div_family'].append(number.value / largest_prime_factor)
+            # data_dict['div_family'].append(number.value / largest_prime_factor)
+            data_dict['div_family'].append(number.division_family)
         if use_bucket_colorization:
-            data_dict['color_bucket'].append(
-                get_bucket_index(binary_buckets, number.value))
+            data_dict['color_bucket'].append(get_colour_bucket_index(binary_buckets, number.value))
 
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
@@ -213,23 +220,27 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
     coloring = ''
     use_bucket_colorization = graph_params['use_bucket_colorization']
     if use_bucket_colorization:
-        number_of_colors = graph_params['number_of_colors']
+        number_of_colors_required = graph_params['number_of_colors']
         factors_list = graph_params['factors_list']
     y_value = graph_params['y_value']
     graph_point_size = graph_params['graph_point_size']
     palette = graph_params['palette']
 
-    if use_bucket_colorization and number_of_colors <= 11:
-        factors_list = get_factors(number_of_colors)
-        color_mapper = CategoricalColorMapper(
-            factors=factors_list, palette=palette[number_of_colors])
-        logger.info(f'{number_of_colors} color buckets created')
+    if use_bucket_colorization and number_of_colors_required <= PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
+        factors_list = get_factors(number_of_colors_required)
+        if not number_of_colors_required in palette:
+            number_of_colors_required = list(palette)[-1]
+        color_mapper = CategoricalColorMapper(factors=factors_list, palette=palette[number_of_colors_required])
+        logger.info(f'{number_of_colors_required} color buckets created')
         graph.scatter(source=data, x='number', y=y_value, color={
                       'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
         coloring = palette_name.lower()
     else:
         base_color = '#3030ff'
-        logger.info('Base coloring')
+        if number_of_colors_required > PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
+            logger.info('Base coloring - number count exceeds palette range')
+        else:
+            logger.info('Base coloring - bucket colorization disabled')
         graph.scatter(source=data, x='number', y=y_value,
                       color=base_color, size=graph_point_size)
         coloring = 'monocolor'
@@ -285,39 +296,63 @@ def split_prime_factors(int_list: List[int]) -> int:
     return sorted_int_list[:-1], sorted_int_list[-1]
 
 
-def get_binary_buckets(sorted_buckets_list: List, slope_buckets: Dict) -> Dict:
+def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dict:
     '''
     Split numbers into binary buckets by antislope
 
     The lowest bucket (highest index) contains half of the antislopes - the highest antislope
     Th next buckets contains half of the remaining antislopes - again the highest ones
     Each bucket above contains half as many members
-    The top buket always has one antislope
+    The top bucket always has one antislope
     '''
 
     number_of_unassigned_buckets = len(sorted_buckets_list)
-    number_of_binary_buckets = get_previous_power_of_two(
-        number_of_unassigned_buckets)
+    number_of_binary_buckets = get_next_power_of_two(number_of_unassigned_buckets)
 
     # create binary bucket index map
     binary_bucket_index_map = {}
-    binary_slope_buckets = {}
-    for counter in range(number_of_binary_buckets + 1):
-        binary_bucket_index = number_of_binary_buckets - counter
+    binary_buckets = {}
+
+    def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
+        filtered_property_buckets_dict = {}
+        trimmed_property_buckets = {}
+        for index, item in sorted_property_buckets.items():
+            trimmed_property_buckets[index] = item
+
+        counter = 0
+        while counter <= cut_off_value:
+            item = next(iter(trimmed_property_buckets.items()))
+            filtered_property_buckets_dict[item[0]] = item[1]
+            trimmed_property_buckets.pop(item[0])
+            counter += 1
+        filtered_property_buckets = []
+        for index, value in filtered_property_buckets_dict.items():
+            filtered_property_buckets.extend(value)
+
+        return filtered_property_buckets, trimmed_property_buckets
+
+
+    for counter in range(number_of_binary_buckets):
+        bucket_count = pow(2, counter)
+        binary_bucket_index = counter
+        binary_buckets[binary_bucket_index] = []
+        filtered_property_bucket, sorted_property_buckets = filter_property_buckets(sorted_property_buckets, binary_bucket_index)
+        binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
         binary_bucket_index_map[binary_bucket_index] = []
-        binary_slope_buckets[binary_bucket_index] = []
-        cutoff = math.floor(len(sorted_buckets_list)/2)
-        binary_bucket_index_map[binary_bucket_index].extend(
-            sorted_buckets_list[cutoff:])
-        sorted_buckets_list = sorted_buckets_list[:cutoff]
+        binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
+        sorted_buckets_list = sorted_buckets_list[bucket_count:]
+        # any leftover numbers go into the last bucket
+        if counter == number_of_binary_buckets - 1:
+            binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list)
+            for number_value in sorted_buckets_list:
+                binary_buckets[binary_bucket_index].extend(sorted_property_buckets[number_value])
 
-    # distribute numbers in the binary buckets according to slope
-    for number in slope_buckets.items():
-        binary_bucket_index = get_binary_bucket_index(
-            number[0], binary_bucket_index_map)
-        binary_slope_buckets[binary_bucket_index].extend(number[1])
+    for number in sorted_property_buckets.items():
+        binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
 
-    return binary_slope_buckets
+        binary_buckets[binary_bucket_index].extend(number[1])
+
+    return binary_buckets
 
 
 def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
@@ -332,7 +367,7 @@ def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
 
 def get_previous_power_of_two(value: int):
     '''
-    Get the highest poewr of 2 that's loewr than a provide number
+    Get the highest power of 2 that's lower than a provide number
     '''
 
     running_product = 1
@@ -342,25 +377,50 @@ def get_previous_power_of_two(value: int):
         counter = counter + 1
     return counter - 1
 
-
-def get_slope_buckets(number_list: List) -> Tuple:
+def get_next_power_of_two(value: int):
     '''
-    Split numbers into buckets, based on the integer value their antislope converges to
+    Get the lowest power of 2 that's higher than a provided number
+    '''
+
+    running_product = 1
+    counter = 0
+    while running_product < value:
+        running_product = running_product * 2
+        counter = counter + 1
+    return counter
+
+
+def get_property_buckets(number_list: List, parameter: str, use_rounding: str = 'none') -> Tuple:
+    '''
+    Split numbers into buckets, based in the provided parameter
     '''
 
     buckets_list = []
-    slope_buckets = {}
+    param_buckets = {}
     for number in number_list:
         if number.is_prime and not include_primes:
             continue
         else:
-            slope_int = round(number.slope)
-            if slope_int not in buckets_list:
-                buckets_list.append(slope_int)
-                slope_buckets[slope_int] = []
-            slope_buckets[slope_int].append(number)
+            try:
+                property = getattr(number, parameter)
+            except:
+                raise Exception
 
-    return buckets_list, slope_buckets
+            if use_rounding == 'full':
+                property = round(property)
+            elif use_rounding == 'down':
+                property = math.floor(property)
+            elif use_rounding == 'up':
+                property = math.ceil(property)
+
+            if property not in buckets_list:
+                buckets_list.append(property)
+                param_buckets[property] = []
+            param_buckets[property].append(number)
+
+    return buckets_list, param_buckets
+
+
 
 
 def prep_output_folder(folder_name: str):
@@ -392,7 +452,7 @@ def get_factors(number_of_colors: int) -> List:
     return factors_list
 
 
-def get_bucket_index(binary_buckets: Dict, value: int) -> int:
+def get_colour_bucket_index(binary_buckets: Dict, value: int) -> int:
     '''
     Get the index of the binary bucket that a number in
     '''

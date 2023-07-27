@@ -1,6 +1,8 @@
 # optimization and refactoring
 
+- [ ]  remove Number class
 
+- [ ] crate graph service
 
 # smalls
 
