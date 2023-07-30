@@ -7,9 +7,8 @@ class Number():
         self.value = value
         self.is_prime = lab.pp.isprime(value)
         if self.value == 1:
-            self.prime_mean = 0
+            self.ideal_factor = 0
             self.prime_factors = []
-            self.prime_mean = 0
             self.mean_deviation = 0
             self.antislope = 0
         else:
@@ -22,7 +21,7 @@ class Number():
                 self.division_family = lab.get_division_family(self.prime_factors)
             self.prime_mean = lab.get_prime_mean(self.prime_factors)
             self.mean_deviation = lab.get_mean_deviation(
-                self.prime_factors, self.prime_mean)
+                self.prime_factors, self.ideal_factor)
             if self.mean_deviation > 0:
                 self.antislope = self.value / self.mean_deviation
             else:

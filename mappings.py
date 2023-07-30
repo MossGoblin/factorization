@@ -7,17 +7,17 @@ graph_title = {
 y_axis_values = {
     "mean_deviation": "deviation",
     "antislope": "one_over_slope",
-    "mean_factor": "mean"
+    "ideal_factor": "ideal"
 }
 
 y_axis_label = {
     "mean_deviation": "mean prime factor deviation",
     "antislope": "antislope",
-    "mean_factor": "mean prime factor"
+    "ideal_factor": "ideal prime factor"
 }
 
 graph_mode_filename_chunk = {
     "mean_deviation": "mean_deviation",
     "antislope": "antislope",
-    "mean_factor": "mean_factor"
+    "ideal_factor": "ideal_factor"
 }

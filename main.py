@@ -23,7 +23,7 @@ logger.setLevel(logging.INFO)
 ch = logging.StreamHandler()
 # create formatter
 formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    "%(asctime)s - %(name)s - [%(levelname)-5s] %(message)s")
 # add formatter to ch
 ch.setFormatter(formatter)
 # add ch to logger
@@ -99,7 +99,7 @@ def create_visualization(number_list: List[Number]):
     '''
 
     if use_bucket_colorization:
-        # [x] separate numbers into binary buckets by closest integer to number.slope
+        # [x] separate numbers into binary buckets by closest integer to number.anti_slope
         # [x] get primary slope buckets
         # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'antislope', use_rounding = 'full')
         buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
@@ -116,7 +116,7 @@ def create_visualization(number_list: List[Number]):
     if include_primes:
         data_dict['is_prime'] = []
     data_dict['prime_factors'] = []
-    data_dict['mean'] = []
+    data_dict['ideal'] = []
     data_dict['deviation'] = []
     data_dict['one_over_slope'] = []
     data_dict['primes_before_largest'] = []
@@ -179,7 +179,7 @@ def create_visualization(number_list: List[Number]):
     if include_primes:
         tooltips.append(('prime', '@is_prime'))
     tooltips.extend([('factors', '@prime_factors'),
-                    ('mean factor value', '@mean'),
+                    ('ideal factor value', '@ideal'),
                     ('mean factor deviation', '@deviation'),
                     ('anti-slope', '@one_over_slope'),
                     ('prime factors before largest', '@primes_before_largest'),
