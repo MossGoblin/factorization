@@ -46,6 +46,12 @@ create_csv = config.get('run', 'crate_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
 graph_mode = config.get('graph', 'mode')
+try:
+    families_filter_list = config.get('filter', 'families')
+except:
+    families_filter = []
+else:
+    families_filter = [int(family) for family in families_filter_list.split(",")]
 
 
 PALETTE_MAXIMUM_NUMBER_OF_COLOURS = 11
@@ -62,6 +68,9 @@ def run(lowerbound=2, upperbound=10):
     start = datetime.utcnow()
     logger.info(f'Start at {start}')
     logger.info(f'* Range [{lowerbound}..{upperbound}]')
+    families_list_str = [str(family) for family in families_filter]
+    filter_text = ": All" if len(families_filter) == 0 else " [ " + ", ".join(families_list_str) + " ]"
+    logger.info(f'* Families{filter_text}')
     logger.info(f'* Mode: "{graph_mode}"')
     include_primes_message = '* Primes included' if include_primes else '* Primes NOT included'
     logger.info(include_primes_message)
@@ -73,7 +82,7 @@ def run(lowerbound=2, upperbound=10):
     palette = get_palette(palette_name=palette_name)
 
     # [x] iterate between bounds and cache numbers
-    number_list = generate_number_list(lowerbound=lowerbound, upperbound=upperbound)
+    number_list = generate_number_list(lowerbound=lowerbound, upperbound=upperbound, families_filter=families_filter)
     logger.info(f'Numbers generated {lowerbound}..{upperbound}')
     logger.info(f'Total composites: {len(number_list)}')
 
@@ -150,11 +159,15 @@ def create_visualization(number_list: List[Number]):
     # [x] create plot
     plot_width = int(config.get('graph', 'width'))
     plot_height = int(config.get('graph', 'height'))
-    primes_included_text = " Primes included" if include_primes else " Primes excluded"
+    family_filter_text = " All families."
+    if len(families_filter) > 0:
+        family_list_str = [str(family) for family in families_filter]
+        family_filter_text = f" Families: {', '.join(family_list_str)}."
+    primes_included_text = " Primes included" if include_primes else " Primes excluded."
 
     graph_params = {}
     graph_params['title'] = mappings.graph_title[graph_mode].format(
-        data_dict['number'][0], data_dict['number'][-1]) + primes_included_text
+        data_dict['number'][0], data_dict['number'][-1]) + family_filter_text + primes_included_text
     graph_params['y_axis_label'] = mappings.y_axis_label[graph_mode]
     graph_params['width'] = plot_width
     graph_params['height'] = plot_height
@@ -495,11 +508,15 @@ def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, b
         return list_string
 
 
-def generate_number_list(lowerbound=2, upperbound=10):
+def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_filter: list[int] = []):
     '''
     Generate a list of Number objects
     '''
 
+    families_filter_counter = []
+    filter_families_string = [str(item) for item in families_filter]
+    if len(families_filter) > 0:
+        families_filter_counter = [0 for item in families_filter]
     number_list = []
     with Bar('Generating numbers', max=(upperbound - lowerbound + 1)) as bar:
         for value in range(lowerbound, upperbound + 1):
@@ -507,7 +524,21 @@ def generate_number_list(lowerbound=2, upperbound=10):
             if pp.isprime(value) and not include_primes:
                 continue
             number = Number(value=value)
+            if len(families_filter) > 0 and not number.division_family in families_filter:
+                continue
             number_list.append(number)
+            if len(families_filter) > 0:
+                filter_index = families_filter.index(number.division_family)
+                families_filter_counter[filter_index] += 1
+
+    if len(families_filter) > 0:
+        if families_filter_counter.count(0) == len(families_filter_counter):
+            logger.info(f"None of the generated numbers belong to families [ {', '.join(filter_families_string)} ]")
+        else:
+            for index, item in enumerate(families_filter):
+                logger.info(f"Numbers count in family {item}: {families_filter_counter[index]}")
+
+
     return number_list
 
 

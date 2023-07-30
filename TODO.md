@@ -11,6 +11,7 @@
 - [ ] align binary buckets with graph mode
 - [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
 - [ ] see about exporting to PNG of SVG
+- [ ] extract utility methods in a separate file?
 
 ---
 
@@ -26,4 +27,5 @@
   - [x] full comments for .ini
 - [x] find out the max colors from palette
 - [x] find if anything can be gathered by slope
-- [ ] add filter by families
+- [x] add filter by families
+- [ ] add file output to logger
