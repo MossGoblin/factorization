@@ -1,6 +1,6 @@
-## how to view the prepared data from the repo
+## How to view the prepared data from the repo
 
-**graph**
+**Graph**
 
 The main.html file in the root folder is exported by the bokeh visualization library on each run.
 
@@ -26,7 +26,7 @@ To view such a file, do the following:
 
 # Blowing up composite numbers
 
-## explanation of the idea:
+## Explanation of the idea:
 
 *Disclaimer*: prime numbers are not mentioned in the explanation as being extreme (in the terms of what is described below). All of the below works for them, but I don't think they bring much to the table at this point.
 
@@ -91,15 +91,15 @@ List the numbers, calculate the mean deviations and plot them.
 
 ---
 
-## notes on the data and the graph
+## Notes on the data and the graph
 
-**graph**
+**Graph**
 
 The x-axis are the composite numbers (primes are excluded by default, but can be included by changing the value of include_primes in config.ini to true)
 
 The y-axis are the calculated mean prime factor deviations.
 
-**antislope**
+**Antislope**
 As an additional piece of data I added the slope for each data point. The main goal of the graph was so see how much a number deviates from its ideal 'blow-up'. However in the early iterations I mistakenly calculated that slope in reverse - run / rise. And it's good that I did, because the values of that antislope are easier to read than the real slope values (4.005 is better than 0.2496). That's why the graph reports the antislope (1/slope a.k.a. run/rise). As it will become apparent later, the antislopes (well, and the slopes, really) have a way of converging nicely to integer values, which can prove useful. I consider this error fortuitous, as I can not imagine I would have easily seen a pattern in the values of the slopes.
 
 The lines that the points form on the graph are not real lines, but are very close.
@@ -147,11 +147,11 @@ The problem is that 7183 has an antislope of 22.377 and 7190 has an antislope 22
 
 ---
 
-# notes on the code and the graph
+# Notes on the code and the graph
 
-**beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, and 1-100000 run takes more than 30 min. If at some point I feel the need to generate frequently larger datasets, I'll work on optimizing the code for speed.
+**Beware**: this code has not been optimized; 1-10000 takes 7 seconds to run, and 1-100000 run takes more than 30 min. If at some point I feel the need to generate frequently larger datasets, I'll work on optimizing the code for speed.
 
-**colors**: The library I chose for visualization (bokeh) has a limit on the number of colors that can be used - 11.
+**Colors**: The library I chose for visualization (bokeh) has a limit on the number of colors that can be used - 11.
 I could not color each antislope line, so I did some bucketing, based on the antislope - if we have X antislope lines on the graph, the heavier half of them (the half with largest antislopes) are in one color bucket. Of the rest, the heavier half is another color bucket and so on.
 As a result the first one or two lines are different colors, then you have 2 with the same color, 4 with another and so on.
 Given that the colors are only for graph readability, I don't plan to optimize that further for now.
