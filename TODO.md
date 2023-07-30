@@ -12,6 +12,7 @@
 - [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
 - [ ] see about exporting to PNG of SVG
 - [ ] extract utility methods in a separate file?
+- [ ] add family filter to filenames
 
 ---
 

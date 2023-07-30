@@ -15,17 +15,11 @@ def get_prime_factors(value) -> List:
     return prime_factors
 
 
-def get_prime_factors(value) -> List:
-    prime_factors = []
-    primes_below = list(pp.primes_below(int(value / 2)))
-    number_body = value
-    for prime in primes_below:
-        if number_body == 1:
-            break
-        while number_body % prime == 0:
-            prime_factors.append(prime)
-            number_body = number_body / prime
-    return prime_factors
+def get_division_family(factors_list) -> int:
+    division_family = 1
+    for counter in range(len(factors_list) - 1):
+        division_family = division_family * factors_list[counter]
+    return division_family
 
 
 def get_prime_mean(prime_factors: List[int]) -> float:
