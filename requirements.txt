@@ -26,6 +26,7 @@ parso==0.7.1
 pickleshare==0.7.5
 Pillow==8.2.0
 pluggy==0.13.1
+progress==1.6
 prompt-toolkit==3.0.8
 py==1.10.0
 pycodestyle==2.7.0

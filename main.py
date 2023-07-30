@@ -11,6 +11,7 @@ import os
 import pyprimes as pp
 from typing import List, Dict, Tuple
 import pandas as pd
+from progress.bar import Bar
 
 import mappings
 from number import Number
@@ -114,30 +115,32 @@ def create_visualization(number_list: List[Number]):
     data_dict['div_family'] = []
     if use_bucket_colorization:
         data_dict['color_bucket'] = []
-    for number in number_list:
-        data_dict['number'].append(number.value)
-        if include_primes:
-            data_dict['is_prime'].append(
-                'true' if number.is_prime else 'false')
-        data_dict['prime_factors'].append(
-            int_list_to_str(number.prime_factors))
-        data_dict['mean'].append(number.prime_mean)
-        data_dict['deviation'].append(number.mean_deviation)
-        data_dict['one_over_slope'].append(number.antislope)
-        if number.value == 1:
-            data_dict['primes_before_largest'].append(0)
-            data_dict['largest_prime_factor'].append(0)
-            data_dict['div_family'].append(1)
-        else:
-            primes_before_largest, largest_prime_factor = split_prime_factors(
-                number.prime_factors)
-            data_dict['primes_before_largest'].append(
-                int_list_to_str(primes_before_largest))
-            data_dict['largest_prime_factor'].append(largest_prime_factor)
-            # data_dict['div_family'].append(number.value / largest_prime_factor)
-            data_dict['div_family'].append(number.division_family)
-        if use_bucket_colorization:
-            data_dict['color_bucket'].append(get_colour_bucket_index(binary_buckets, number.value))
+
+    with Bar('Collating data', max=len(number_list)) as bar:
+        for number in number_list:
+            bar.next()
+            data_dict['number'].append(number.value)
+            if include_primes:
+                data_dict['is_prime'].append(
+                    'true' if number.is_prime else 'false')
+            data_dict['prime_factors'].append(
+                int_list_to_str(number.prime_factors))
+            data_dict['mean'].append(number.prime_mean)
+            data_dict['deviation'].append(number.mean_deviation)
+            data_dict['one_over_slope'].append(number.antislope)
+            if number.value == 1:
+                data_dict['primes_before_largest'].append(0)
+                data_dict['largest_prime_factor'].append(0)
+                data_dict['div_family'].append(1)
+            else:
+                primes_before_largest, largest_prime_factor = split_prime_factors(
+                    number.prime_factors)
+                data_dict['primes_before_largest'].append(
+                    int_list_to_str(primes_before_largest))
+                data_dict['largest_prime_factor'].append(largest_prime_factor)
+                data_dict['div_family'].append(number.division_family)
+            if use_bucket_colorization:
+                data_dict['color_bucket'].append(get_colour_bucket_index(binary_buckets, number.value))
 
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
@@ -498,11 +501,13 @@ def generate_number_list(lowerbound=2, upperbound=10):
     '''
 
     number_list = []
-    for value in range(lowerbound, upperbound + 1):
-        if pp.isprime(value) and not include_primes:
-            continue
-        number = Number(value=value)
-        number_list.append(number)
+    with Bar('Generating numbers', max=(upperbound - lowerbound + 1)) as bar:
+        for value in range(lowerbound, upperbound + 1):
+            bar.next()
+            if pp.isprime(value) and not include_primes:
+                continue
+            number = Number(value=value)
+            number_list.append(number)
     return number_list
 
 

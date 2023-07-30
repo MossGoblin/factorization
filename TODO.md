@@ -2,7 +2,7 @@
 
 - [ ]  remove Number class
 
-- [ ] crate graph service
+- [ ] extract graph to service
 
 # smalls
 
@@ -26,3 +26,4 @@
   - [x] full comments for .ini
 - [x] find out the max colors from palette
 - [x] find if anything can be gathered by slope
+- [ ] add filter by families
