@@ -524,13 +524,15 @@ def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_fil
             bar.next()
 
             # exclude primes
-            if pp.isprime(value) and not include_primes:
+            if not include_primes and pp.isprime(value):
                 continue
             
-            division_family = lab.get_division_family(value)
+            division_family = 1
             # exclude number if it fails the families filter
-            if len(families_filter) > 0 and not division_family in families_filter:
-                continue
+            if len(families_filter) > 0:
+                division_family = lab.get_division_family(value)
+                if not division_family in families_filter:
+                    continue
 
             number = Number(value=value, division_family=division_family, calculate_division_family=False)
 
