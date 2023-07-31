@@ -13,6 +13,7 @@ from typing import List, Dict, Tuple
 import pandas as pd
 from progress.bar import Bar
 
+import lab
 import mappings
 from number import Number
 
@@ -65,7 +66,7 @@ def run(lowerbound=2, upperbound=10):
     global palette
     global graph_mode
 
-    start = datetime.utcnow()
+    start = datetime.now()
     logger.info(f'Start at {start}')
     logger.info(f'* Range [{lowerbound}..{upperbound}]')
     families_list_str = [str(family) for family in families_filter]
@@ -88,7 +89,7 @@ def run(lowerbound=2, upperbound=10):
 
     # [x] create visualization
     create_visualization(number_list)
-    end = datetime.utcnow()
+    end = datetime.now()
     logger.info(f'End at {end}')
     logger.info(f'Total time: {end-start}')
 
@@ -521,14 +522,21 @@ def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_fil
     with Bar('Generating numbers', max=(upperbound - lowerbound + 1)) as bar:
         for value in range(lowerbound, upperbound + 1):
             bar.next()
+
+            # exclude primes
             if pp.isprime(value) and not include_primes:
                 continue
-            number = Number(value=value)
-            if len(families_filter) > 0 and not number.division_family in families_filter:
+            
+            division_family = lab.get_division_family(value)
+            # exclude number if it fails the families filter
+            if len(families_filter) > 0 and not division_family in families_filter:
                 continue
+
+            number = Number(value=value, division_family=division_family, calculate_division_family=False)
+
             number_list.append(number)
             if len(families_filter) > 0:
-                filter_index = families_filter.index(number.division_family)
+                filter_index = families_filter.index(division_family)
                 families_filter_counter[filter_index] += 1
 
     if len(families_filter) > 0:

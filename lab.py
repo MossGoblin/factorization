@@ -1,10 +1,11 @@
+import math
 import pyprimes as pp
 from typing import List
 
 
 def get_prime_factors(value) -> List:
     prime_factors = []
-    primes_below = list(pp.primes_below(value))
+    primes_below = list(pp.primes_below(math.floor(value/2)))
     number_body = value
     for prime in primes_below:
         if number_body == 1:
@@ -15,10 +16,14 @@ def get_prime_factors(value) -> List:
     return prime_factors
 
 
-def get_division_family(factors_list) -> int:
+def get_division_family(value) -> int:
     division_family = 1
-    for counter in range(len(factors_list) - 1):
-        division_family = division_family * factors_list[counter]
+    primes_below = list(pp.primes_below(math.floor(value/2)))
+    primes_below.sort(reverse=True)
+    for prime in primes_below:
+        if value % prime == 0:
+            division_family = value / prime
+            break
     return division_family
 
 
