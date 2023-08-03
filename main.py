@@ -18,7 +18,8 @@ import mappings
 from number import Number
 
 #remove old log file
-os.remove('run.log')
+if os.path.isfile('run.log'):
+    os.remove('run.log')
 # create logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
