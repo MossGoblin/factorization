@@ -21,14 +21,14 @@ from number import Number
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 # create console handler and set level to debug
-ch = logging.StreamHandler()
+sh = logging.StreamHandler()
 # create formatter
 formatter = logging.Formatter(
     "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# add formatter to ch
-ch.setFormatter(formatter)
-# add ch to logger
-logger.addHandler(ch)
+# add formatter to sh
+sh.setFormatter(formatter)
+# add sh to logger
+logger.addHandler(sh)
 
 
 config = ConfigParser()
@@ -47,6 +47,8 @@ create_csv = config.get('run', 'crate_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
 graph_mode = config.get('graph', 'mode')
+full_antislope_display = True if config.get(
+    'graph', 'full_antislope_display') == 'true' else False
 try:
     families_filter_list = config.get('filter', 'families')
 except:
@@ -65,6 +67,7 @@ def run(lowerbound=2, upperbound=10):
     global palette_name
     global palette
     global graph_mode
+
 
     start = datetime.now()
     logger.info(f'Start at {start}')
@@ -137,7 +140,10 @@ def create_visualization(number_list: List[Number]):
                 int_list_to_str(number.prime_factors))
             data_dict['mean'].append(number.prime_mean)
             data_dict['deviation'].append(number.mean_deviation)
-            data_dict['one_over_slope'].append(number.antislope)
+            if full_antislope_display:
+                data_dict['one_over_slope'].append(number.antislope_string)
+            else:
+                data_dict['one_over_slope'].append(float(number.antislope))
             if number.value == 1:
                 data_dict['primes_before_largest'].append(0)
                 data_dict['largest_prime_factor'].append(0)
@@ -212,8 +218,9 @@ def create_visualization(number_list: List[Number]):
     timestamp_format = generate_timestamp()
     timestamp = datetime.utcnow().strftime(timestamp_format)
     primes_included = 'primes' if include_primes else 'no_primes'
+    families = 'ALL' if len(families_filter) == 0 else "_".join([str(family) for family in families_filter])
     hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
-        '_' + graph_mode_chunk + '_' + primes_included + '_' + coloring + '_' + timestamp
+        '_' + graph_mode_chunk + '_' + primes_included + '_' + families + '_' + coloring + '_' + timestamp
     csv_output_folder = 'output'
     if create_csv:
         full_hard_copy_filename = hard_copy_filename + '.csv'

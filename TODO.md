@@ -1,7 +1,6 @@
 # optimization and refactoring
 
-- [ ]  remove Number class
-
+- [ ] remove Number class
 - [ ] extract graph to service
 
 # smalls
@@ -12,7 +11,7 @@
 - [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
 - [ ] see about exporting to PNG of SVG
 - [ ] extract utility methods in a separate file?
-- [ ] add family filter to filenames
+- [x] add family filter to filenames
 
 ---
 

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 import lab
 
 
@@ -13,6 +15,7 @@ class Number():
             self.prime_mean = 0
             self.mean_deviation = 0
             self.antislope = 0
+            self.antislope_string = "0"
         else:
             self.prime_factors = []
             self.division_family = division_family
@@ -27,6 +30,8 @@ class Number():
             self.prime_mean = lab.get_prime_mean(self.prime_factors)
             self.mean_deviation = lab.get_mean_deviation(self.prime_factors, self.prime_mean)
             if self.mean_deviation > 0:
-                self.antislope = self.value / self.mean_deviation
+                self.antislope = Decimal(self.value) / Decimal(self.mean_deviation)
+                self.antislope_string = str(self.antislope)
             else:
                 self.antislope = 0
+                self.antislope_string = "0"
