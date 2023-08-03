@@ -17,22 +17,28 @@ import lab
 import mappings
 from number import Number
 
+#remove old log file
+os.remove('run.log')
 # create logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-# create console handler and set level to debug
+# create console handler
 sh = logging.StreamHandler()
+# create file handler
+fh = logging.FileHandler('run.log')
 # create formatter
 formatter = logging.Formatter(
     "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 # add formatter to sh
 sh.setFormatter(formatter)
+# add formatter to fh
+fh.setFormatter(formatter)
 # add sh to logger
 logger.addHandler(sh)
+logger.addHandler(fh)
 
 
 config = ConfigParser()
-
 config.read('config.ini')
 
 lowerbound = int(config.get('range', 'lowerbound'))
@@ -58,7 +64,7 @@ else:
 
 
 PALETTE_MAXIMUM_NUMBER_OF_COLOURS = 11
-
+CSV_OUTPUT_FOLDER = 'output'
 
 def run(lowerbound=2, upperbound=10):
     global include_primes
@@ -91,10 +97,13 @@ def run(lowerbound=2, upperbound=10):
     logger.info(f'Total composites: {len(number_list)}')
 
     # [x] create visualization
-    create_visualization(number_list)
+    hard_copy_filename = create_visualization(number_list)
     end = datetime.now()
     logger.info(f'End at {end}')
     logger.info(f'Total time: {end-start}')
+
+    stash_graph_html(CSV_OUTPUT_FOLDER, hard_copy_filename)
+    stash_log_file(CSV_OUTPUT_FOLDER, hard_copy_filename)
 
 
 def create_visualization(number_list: List[Number]):
@@ -221,11 +230,10 @@ def create_visualization(number_list: List[Number]):
     families = 'ALL' if len(families_filter) == 0 else "_".join([str(family) for family in families_filter])
     hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
         '_' + graph_mode_chunk + '_' + primes_included + '_' + families + '_' + coloring + '_' + timestamp
-    csv_output_folder = 'output'
     if create_csv:
         full_hard_copy_filename = hard_copy_filename + '.csv'
-        path = csv_output_folder + '\\'
-        prep_output_folder(csv_output_folder)
+        path = CSV_OUTPUT_FOLDER + '\\'
+        prep_output_folder(CSV_OUTPUT_FOLDER)
         data_df.to_csv(path + full_hard_copy_filename)
         logger.info(f'Data saved as output\{full_hard_copy_filename}')
 
@@ -233,7 +241,7 @@ def create_visualization(number_list: List[Number]):
     logger.info('Graph generated')
     show(graph)
 
-    stash_graph_html(csv_output_folder, hard_copy_filename)
+    return hard_copy_filename
 
 
 def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> figure:
@@ -273,12 +281,25 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
 
 
 def stash_graph_html(csv_output_folder, graph_filename: str):
+    '''Copy the last html file into the output folder'''
     full_stashed_filename = csv_output_folder + '\\' + graph_filename + '.html'
-    with open('main.html', 'r') as html_output_file:
-        content = html_output_file.read()
+    if os.path.isfile(full_stashed_filename):
+        os.remove(full_stashed_filename)
+    with open('main.html', 'r') as html_input_file:
+        content = html_input_file.read()
         with open(full_stashed_filename, 'wt') as stashed_html_output_file:
             stashed_html_output_file.write(content)
-    logger.info(f'Graph saved as {full_stashed_filename}')
+
+
+def stash_log_file(csv_output_folder, log_filename):
+    '''Copy the log file into the output folder'''
+    if os.path.isfile(log_filename):
+        os.remove(log_filename)
+    full_stashed_graph_filename = csv_output_folder + '\\' + log_filename + '.log'
+    with open('run.log', 'r') as log_input_file:
+        content = log_input_file.read()
+        with open(full_stashed_graph_filename, 'wt') as stashed_log_output_file:
+            stashed_log_output_file.write(content)
 
 
 def get_palette(palette_name: str) -> palette:
@@ -317,6 +338,7 @@ def get_figure(params: Dict) -> figure:
 
 def split_prime_factors(int_list: List[int]) -> int:
     sorted_int_list = sorted(int_list)
+    
     return sorted_int_list[:-1], sorted_int_list[-1]
 
 
