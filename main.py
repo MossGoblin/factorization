@@ -43,7 +43,7 @@ use_bucket_colorization = True if config.get(
     'graph', 'use_color_buckets') == 'true' else False
 include_primes = True if config.get(
     'run', 'include_primes') == 'true' else False
-create_csv = config.get('run', 'crate_csv')
+create_csv = config.get('run', 'create_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
 graph_mode = config.get('graph', 'mode')
