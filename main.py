@@ -177,9 +177,10 @@ def create_visualization(number_list: List[Number]):
     plot_width = int(config.get('graph', 'width'))
     plot_height = int(config.get('graph', 'height'))
     family_filter_text = " All families."
-    if len(families_filter) > 0:
-        family_list_str = [str(family) for family in families_filter]
-        family_filter_text = f" Families: {', '.join(family_list_str)}."
+    if len(families_filter) > 0 and len(families_filter) <= 5:
+        family_filter_text = " Families: " + ", ".join([str(family) for family in families_filter]) + "."
+    else:
+        family_filter_text = " Families: " + "...".join([str(families_filter[0]), str(families_filter[-1])]) + "."
     primes_included_text = " Primes included" if include_primes else " Primes excluded."
 
     graph_params = {}
@@ -228,9 +229,13 @@ def create_visualization(number_list: List[Number]):
     timestamp_format = generate_timestamp()
     timestamp = datetime.utcnow().strftime(timestamp_format)
     primes_included = 'primes' if include_primes else 'no_primes'
-    families = 'ALL' if len(families_filter) == 0 else "_".join([str(family) for family in families_filter])
+    families_string = "All"
+    if len(families_filter) > 0 and len(families_filter) <= 5:
+        families_string = "_".join([str(family) for family in families_filter])
+    else:
+        families_string = "__".join([str(families_filter[0]), str(families_filter[-1])])
     hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
-        '_' + graph_mode_chunk + '_' + primes_included + '_' + families + '_' + coloring + '_' + timestamp
+        '_' + graph_mode_chunk + '_' + primes_included + '_' + families_string + '_' + coloring + '_' + timestamp
     if create_csv:
         full_hard_copy_filename = hard_copy_filename + '.csv'
         path = CSV_OUTPUT_FOLDER + '\\'
