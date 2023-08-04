@@ -179,7 +179,7 @@ def create_visualization(number_list: List[Number]):
     family_filter_text = " All families."
     if len(families_filter) > 0 and len(families_filter) <= 5:
         family_filter_text = " Families: " + ", ".join([str(family) for family in families_filter]) + "."
-    else:
+    elif len(families_filter) > 0:
         family_filter_text = " Families: " + "...".join([str(families_filter[0]), str(families_filter[-1])]) + "."
     primes_included_text = " Primes included" if include_primes else " Primes excluded."
 
@@ -213,7 +213,7 @@ def create_visualization(number_list: List[Number]):
         number_of_colors = len(binary_buckets)
     graph_point_size = int(config.get('graph', 'point_size'))
 
-    graph_params['type'] = 'scatter'
+    # graph_params['type'] = 'scatter'
     graph_params['y_value'] = mappings.y_axis_values[graph_mode]
     graph_params['graph_point_size'] = graph_point_size
     graph_params['use_bucket_colorization'] = use_bucket_colorization
@@ -232,7 +232,7 @@ def create_visualization(number_list: List[Number]):
     families_string = "All"
     if len(families_filter) > 0 and len(families_filter) <= 5:
         families_string = "_".join([str(family) for family in families_filter])
-    else:
+    elif len(families_filter) > 0:
         families_string = "__".join([str(families_filter[0]), str(families_filter[-1])])
     hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
         '_' + graph_mode_chunk + '_' + primes_included + '_' + families_string + '_' + coloring + '_' + timestamp
@@ -270,8 +270,7 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
             number_of_colors_required = list(palette)[-1]
         color_mapper = CategoricalColorMapper(factors=factors_list, palette=palette[number_of_colors_required])
         logger.info(f'{number_of_colors_required} color buckets created')
-        graph.scatter(source=data, x='number', y=y_value, color={
-                      'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
+        graph.scatter(source=data, x='number', y=y_value, color={'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
         coloring = palette_name.lower()
     else:
         base_color = '#3030ff'
@@ -279,8 +278,7 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
             logger.info('Base coloring - number count exceeds palette range')
         else:
             logger.info('Base coloring - bucket colorization disabled')
-        graph.scatter(source=data, x='number', y=y_value,
-                      color=base_color, size=graph_point_size)
+        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
         coloring = 'monocolor'
 
     return graph, coloring
