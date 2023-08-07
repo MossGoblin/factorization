@@ -7,6 +7,7 @@ from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
 from datetime import datetime
 import logging
 import math
+import numpy as np
 import os
 import pyprimes as pp
 from typing import List, Dict, Tuple
@@ -53,6 +54,7 @@ include_primes = True if config.get(
 create_csv = config.get('run', 'create_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
+BASE = int(config.get('graph', 'base'))
 graph_mode = config.get('graph', 'mode')
 full_antislope_display = True if config.get(
     'graph', 'full_antislope_display') == 'true' else False
@@ -113,15 +115,14 @@ def create_visualization(number_list: List[Number]):
     '''
 
     if use_bucket_colorization:
-        # [x] separate numbers into binary buckets by closest integer to number.slope
+        # [x] separate numbers into binary buckets by closest integer to a given property
         # [x] get primary slope buckets
         # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'antislope', use_rounding = 'full')
-        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
         buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'division_family', use_rounding = 'full')
+        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
 
         # [x] pour numbers into binary buckets
         sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
-        # binary_buckets = get_binary_buckets(sorted(buckets_list), property_buckets)
         binary_buckets = get_binary_buckets(sorted(buckets_list), sorted_property_buckets)
 
     # [x] prep visualization data
@@ -348,16 +349,15 @@ def split_prime_factors(int_list: List[int]) -> int:
 
 def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dict:
     '''
-    Split numbers into binary buckets by antislope
+    Split numbers into binary buckets by a given property
 
-    The lowest bucket (highest index) contains half of the antislopes - the highest antislope
-    Th next buckets contains half of the remaining antislopes - again the highest ones
+    The lowest bucket (highest index) contains half of the numbers
     Each bucket above contains half as many members
-    The top bucket always has one antislope
+    The top bucket always contains the numbers with the single highest property
     '''
 
     number_of_unassigned_buckets = len(sorted_buckets_list)
-    number_of_binary_buckets = get_next_power_of_two(number_of_unassigned_buckets)
+    number_of_binary_buckets = get_power_of_n(number_of_unassigned_buckets, base=BASE)
 
     # create binary bucket index map
     binary_bucket_index_map = {}
@@ -381,9 +381,9 @@ def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict)
 
         return filtered_property_buckets, trimmed_property_buckets
 
-
+    # TEST CHECK HERE
     for counter in range(number_of_binary_buckets):
-        bucket_count = pow(2, counter)
+        bucket_count = pow(BASE, counter)
         binary_bucket_index = counter
         binary_buckets[binary_bucket_index] = []
         filtered_property_bucket, sorted_property_buckets = filter_property_buckets(sorted_property_buckets, binary_bucket_index)
@@ -391,28 +391,24 @@ def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict)
         binary_bucket_index_map[binary_bucket_index] = []
         binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
         sorted_buckets_list = sorted_buckets_list[bucket_count:]
-        # any leftover numbers go into the last bucket
-        if counter == number_of_binary_buckets - 1:
-            binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list)
-            for number_value in sorted_buckets_list:
-                binary_buckets[binary_bucket_index].extend(sorted_property_buckets[number_value])
 
     for number in sorted_property_buckets.items():
         binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
-
+        # TEST print(f'{number[1][0].value} -- {number[1][0].division_family} -- {binary_bucket_index}')
         binary_buckets[binary_bucket_index].extend(number[1])
 
     return binary_buckets
 
 
-def get_binary_bucket_index(slope: int, binary_bucket_index_map: Dict) -> int:
+def get_binary_bucket_index(property: int, binary_bucket_index_map: Dict) -> int:
     '''
-    Get the index of the binary bucket by antislope value
+    Get the index of the binary bucket by property
     '''
 
-    for bucket_index, slope_list in binary_bucket_index_map.items():
-        if slope in slope_list:
+    for bucket_index, property_list in binary_bucket_index_map.items():
+        if property in property_list:
             return bucket_index
+    raise Exception(f'Property {property} not found in binary_bucket_index_map')
 
 
 def get_previous_power_of_two(value: int):
@@ -427,18 +423,14 @@ def get_previous_power_of_two(value: int):
         counter = counter + 1
     return counter - 1
 
-def get_next_power_of_two(value: int):
+def get_power_of_n(value: int, base: int):
     '''
-    Get the lowest power of 2 that'sequal or  higher than a provided number
+    Get the lowest power of 2 that's equal or  higher than the provided number
     '''
 
-    running_product = 1
     counter = 0
-    while running_product < value:
-        running_product = running_product * 2
-        counter = counter + 1
-    # return at lest 1 in case of one family
-    counter = max(1, counter)
+    counter = math.ceil(np.emath.logn(base, value))
+
     return counter
 
 
