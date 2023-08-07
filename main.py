@@ -116,8 +116,8 @@ def create_visualization(number_list: List[Number]):
         # [x] separate numbers into binary buckets by closest integer to number.slope
         # [x] get primary slope buckets
         # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'antislope', use_rounding = 'full')
-        buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
-        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'division_family', use_rounding = 'full')
+        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
+        buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'division_family', use_rounding = 'full')
 
         # [x] pour numbers into binary buckets
         sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
@@ -213,7 +213,7 @@ def create_visualization(number_list: List[Number]):
         number_of_colors = len(binary_buckets)
     graph_point_size = int(config.get('graph', 'point_size'))
 
-    # graph_params['type'] = 'scatter'
+    # graph_params['type'] = 'scatter' # This does not seem to be necessary
     graph_params['y_value'] = mappings.y_axis_values[graph_mode]
     graph_params['graph_point_size'] = graph_point_size
     graph_params['use_bucket_colorization'] = use_bucket_colorization
@@ -429,7 +429,7 @@ def get_previous_power_of_two(value: int):
 
 def get_next_power_of_two(value: int):
     '''
-    Get the lowest power of 2 that's higher than a provided number
+    Get the lowest power of 2 that'sequal or  higher than a provided number
     '''
 
     running_product = 1
@@ -437,6 +437,8 @@ def get_next_power_of_two(value: int):
     while running_product < value:
         running_product = running_product * 2
         counter = counter + 1
+    # return at lest 1 in case of one family
+    counter = max(1, counter)
     return counter
 
 
@@ -563,11 +565,14 @@ def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_fil
             division_family = 1
             # exclude number if it fails the families filter
             if len(families_filter) > 0:
+                calculate_division_family = False
                 division_family = lab.get_division_family(value)
                 if not division_family in families_filter:
                     continue
+            else:
+                calculate_division_family = True
 
-            number = Number(value=value, division_family=division_family, calculate_division_family=False)
+            number = Number(value=value, division_family=division_family, calculate_division_family=calculate_division_family)
 
             number_list.append(number)
             if len(families_filter) > 0:
