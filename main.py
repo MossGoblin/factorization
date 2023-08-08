@@ -3,7 +3,7 @@ from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo
+from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Category10, Dark2
 from datetime import datetime
 import logging
 import math
@@ -123,7 +123,8 @@ def create_visualization(number_list: List[Number]):
 
         # [x] pour numbers into binary buckets
         sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
-        binary_buckets = get_binary_buckets(sorted(buckets_list), sorted_property_buckets)
+        sorted_buckets_list = sorted(buckets_list)
+        binary_buckets = get_binary_buckets(sorted_buckets_list, sorted_property_buckets)
 
     # [x] prep visualization data
     data_dict = {}
@@ -325,6 +326,10 @@ def get_palette(palette_name: str) -> palette:
         return Cividis
     elif palette_name == 'Turbo':
         return Turbo
+    elif palette_name == 'Category10':
+        return Category10
+    elif palette_name == 'Dark2':
+        return Dark2
     else:
         return Turbo
 
@@ -347,6 +352,27 @@ def split_prime_factors(int_list: List[int]) -> int:
     return sorted_int_list[:-1], sorted_int_list[-1]
 
 
+def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
+    filtered_property_buckets_dict = {}
+    trimmed_property_buckets = {}
+    for index, item in sorted_property_buckets.items():
+        trimmed_property_buckets[index] = item
+
+    counter = 0
+    # while counter <= cut_off_value:
+    while counter < cut_off_value and len(trimmed_property_buckets) > 0:
+        item = next(iter(trimmed_property_buckets.items()))
+        filtered_property_buckets_dict[item[0]] = item[1]
+        trimmed_property_buckets.pop(item[0])
+        counter += 1
+
+    filtered_property_buckets = []
+    for index, value in filtered_property_buckets_dict.items():
+        filtered_property_buckets.extend(value)
+
+    return filtered_property_buckets, trimmed_property_buckets
+
+
 def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dict:
     '''
     Split numbers into binary buckets by a given property
@@ -363,30 +389,11 @@ def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict)
     binary_bucket_index_map = {}
     binary_buckets = {}
 
-    def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
-        filtered_property_buckets_dict = {}
-        trimmed_property_buckets = {}
-        for index, item in sorted_property_buckets.items():
-            trimmed_property_buckets[index] = item
-
-        counter = 0
-        while counter <= cut_off_value:
-            item = next(iter(trimmed_property_buckets.items()))
-            filtered_property_buckets_dict[item[0]] = item[1]
-            trimmed_property_buckets.pop(item[0])
-            counter += 1
-        filtered_property_buckets = []
-        for index, value in filtered_property_buckets_dict.items():
-            filtered_property_buckets.extend(value)
-
-        return filtered_property_buckets, trimmed_property_buckets
-
-    # TEST CHECK HERE
     for counter in range(number_of_binary_buckets):
         bucket_count = pow(BASE, counter)
         binary_bucket_index = counter
         binary_buckets[binary_bucket_index] = []
-        filtered_property_bucket, sorted_property_buckets = filter_property_buckets(sorted_property_buckets, binary_bucket_index)
+        filtered_property_bucket, sorted_property_buckets = filter_property_buckets(sorted_property_buckets, bucket_count)
         binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
         binary_bucket_index_map[binary_bucket_index] = []
         binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
@@ -394,7 +401,6 @@ def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict)
 
     for number in sorted_property_buckets.items():
         binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
-        # TEST print(f'{number[1][0].value} -- {number[1][0].division_family} -- {binary_bucket_index}')
         binary_buckets[binary_bucket_index].extend(number[1])
 
     return binary_buckets
