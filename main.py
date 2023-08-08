@@ -55,11 +55,16 @@ create_csv = config.get('run', 'create_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
 BASE = int(config.get('graph', 'base'))
-graph_mode = config.get('graph', 'mode')
+graph_mode = config.get('graph', 'visualization_mode')
+colorization_mode = config.get('graph', 'colorization_mode')
+if colorization_mode == 'default':
+    colorization_mode = graph_mode
+property_rounding = config.get('graph', 'property_rounding')
 full_antislope_display = True if config.get(
     'graph', 'full_antislope_display') == 'true' else False
 try:
     families_filter_list = config.get('filter', 'families')
+    families_filter_list = families_filter_list.replace(' ', '')
 except:
     families_filter = []
 else:
@@ -104,7 +109,7 @@ def run(lowerbound=2, upperbound=10):
     end = datetime.now()
     logger.info(f'End at {end}')
     logger.info(f'Total time: {end-start}')
-
+ 
     stash_graph_html(CSV_OUTPUT_FOLDER, hard_copy_filename)
     stash_log_file(CSV_OUTPUT_FOLDER, hard_copy_filename)
 
@@ -117,9 +122,7 @@ def create_visualization(number_list: List[Number]):
     if use_bucket_colorization:
         # [x] separate numbers into binary buckets by closest integer to a given property
         # [x] get primary slope buckets
-        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'antislope', use_rounding = 'full')
-        buckets_list, property_buckets = get_property_buckets(number_list, parameter = 'division_family', use_rounding = 'full')
-        # buckets_list, property_buckets = get_property_buckets(number_list, parameter = graph_mode, use_rounding = 'full')
+        buckets_list, property_buckets = get_property_buckets(number_list, parameter = colorization_mode, use_rounding = property_rounding)
 
         # [x] pour numbers into binary buckets
         sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
@@ -434,13 +437,13 @@ def get_power_of_n(value: int, base: int):
     Get the lowest power of 2 that's equal or  higher than the provided number
     '''
 
-    counter = 0
     counter = math.ceil(np.emath.logn(base, value))
+    counter = max(1, math.ceil(np.emath.logn(base, value)))
 
     return counter
 
 
-def get_property_buckets(number_list: List, parameter: str, use_rounding: str = 'none') -> Tuple:
+def get_property_buckets(number_list: List, parameter: str, use_rounding: str = 'full') -> Tuple:
     '''
     Split numbers into buckets, based in the provided parameter
     '''
