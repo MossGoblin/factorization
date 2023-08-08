@@ -7,7 +7,6 @@ from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Cate
 from datetime import datetime
 import logging
 import math
-import numpy as np
 import os
 import pyprimes as pp
 from typing import List, Dict, Tuple
@@ -89,7 +88,8 @@ def run(lowerbound=2, upperbound=10):
     families_list_str = [str(family) for family in families_filter]
     filter_text = ": All" if len(families_filter) == 0 else " [ " + ", ".join(families_list_str) + " ]"
     logger.info(f'* Families{filter_text}')
-    logger.info(f'* Mode: "{graph_mode}"')
+    logger.info(f'* Graph mode: "{graph_mode}"')
+    logger.info(f'* Colorization mode: "{colorization_mode}"')
     include_primes_message = '* Primes included' if include_primes else '* Primes NOT included'
     logger.info(include_primes_message)
     create_csv_message = '* CSV output included' if create_csv else '* No CVS output'
@@ -101,7 +101,13 @@ def run(lowerbound=2, upperbound=10):
 
     # [x] iterate between bounds and cache numbers
     number_list = generate_number_list(lowerbound=lowerbound, upperbound=upperbound, families_filter=families_filter)
-    logger.info(f'Numbers generated {lowerbound}..{upperbound}')
+    if len(number_list) == 0:
+        logger.info(f'No composites generated. Terminating the program.')
+        end = datetime.now()
+        logger.info(f'End at {end}')
+        logger.info(f'Total time: {end-start}')
+        quit()
+    logger.info(f'Numbers iterated {lowerbound}..{upperbound}')
     logger.info(f'Total composites: {len(number_list)}')
 
     # [x] create visualization
@@ -271,10 +277,14 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
 
     if use_bucket_colorization and number_of_colors_required <= PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
         factors_list = get_factors(number_of_colors_required)
+        requested_number_of_colors = number_of_colors_required
         if not number_of_colors_required in palette:
             number_of_colors_required = list(palette)[-1]
         color_mapper = CategoricalColorMapper(factors=factors_list, palette=palette[number_of_colors_required])
-        logger.info(f'{number_of_colors_required} color buckets created')
+        if requested_number_of_colors != number_of_colors_required:
+            logger.info(f'{requested_number_of_colors} colors unavailable. {number_of_colors_required} color buckets created')
+        else:
+            logger.info(f'{number_of_colors_required} color buckets created')
         graph.scatter(source=data, x='number', y=y_value, color={'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
         coloring = palette_name.lower()
     else:
@@ -356,22 +366,17 @@ def split_prime_factors(int_list: List[int]) -> int:
 
 
 def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
-    filtered_property_buckets_dict = {}
     trimmed_property_buckets = {}
     for index, item in sorted_property_buckets.items():
         trimmed_property_buckets[index] = item
 
-    counter = 0
-    # while counter <= cut_off_value:
-    while counter < cut_off_value and len(trimmed_property_buckets) > 0:
+    filtered_property_buckets = []
+    counter = 1
+    while counter <= cut_off_value and len(trimmed_property_buckets) > 0:
         item = next(iter(trimmed_property_buckets.items()))
-        filtered_property_buckets_dict[item[0]] = item[1]
+        filtered_property_buckets.extend(item[1])
         trimmed_property_buckets.pop(item[0])
         counter += 1
-
-    filtered_property_buckets = []
-    for index, value in filtered_property_buckets_dict.items():
-        filtered_property_buckets.extend(value)
 
     return filtered_property_buckets, trimmed_property_buckets
 
@@ -392,19 +397,20 @@ def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict)
     binary_bucket_index_map = {}
     binary_buckets = {}
 
-    for counter in range(number_of_binary_buckets):
+    for counter in range(number_of_binary_buckets + 1):
         bucket_count = pow(BASE, counter)
         binary_bucket_index = counter
         binary_buckets[binary_bucket_index] = []
         filtered_property_bucket, sorted_property_buckets = filter_property_buckets(sorted_property_buckets, bucket_count)
-        binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
-        binary_bucket_index_map[binary_bucket_index] = []
-        binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
-        sorted_buckets_list = sorted_buckets_list[bucket_count:]
+        if len(filtered_property_bucket):
+            binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
+            binary_bucket_index_map[binary_bucket_index] = []
+            binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
+            sorted_buckets_list = sorted_buckets_list[bucket_count:]
 
-    for number in sorted_property_buckets.items():
-        binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
-        binary_buckets[binary_bucket_index].extend(number[1])
+    # for number in sorted_property_buckets.items():
+    #     binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
+    #     binary_buckets[binary_bucket_index].extend(number[1])
 
     return binary_buckets
 
@@ -420,25 +426,19 @@ def get_binary_bucket_index(property: int, binary_bucket_index_map: Dict) -> int
     raise Exception(f'Property {property} not found in binary_bucket_index_map')
 
 
-def get_previous_power_of_two(value: int):
-    '''
-    Get the highest power of 2 that's lower than a provide number
-    '''
-
-    running_product = 1
-    counter = 0
-    while running_product < value:
-        running_product = running_product * 2
-        counter = counter + 1
-    return counter - 1
-
 def get_power_of_n(value: int, base: int):
     '''
-    Get the lowest power of 2 that's equal or  higher than the provided number
+    Get the lowest power of a base that's equal or higher than the provided number
     '''
 
-    counter = math.ceil(np.emath.logn(base, value))
-    counter = max(1, math.ceil(np.emath.logn(base, value)))
+    if value == 1:
+        return 1
+
+    counter = 0
+    intermediate_product = 1
+    while intermediate_product < value:
+        intermediate_product += base**counter
+        counter += 1
 
     return counter
 

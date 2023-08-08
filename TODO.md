@@ -28,4 +28,4 @@
 - [x] find out the max colors from palette
 - [x] find if anything can be gathered by slope
 - [x] add filter by families
-- [ ] add file output to logger
+- [x] add file output to logger
