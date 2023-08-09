@@ -53,7 +53,6 @@ include_primes = True if config.get(
 create_csv = config.get('run', 'create_csv')
 palette = Turbo
 palette_name = config.get('graph', 'palette')
-BASE = int(config.get('graph', 'base'))
 graph_mode = config.get('graph', 'visualization_mode')
 colorization_mode = config.get('graph', 'colorization_mode')
 if colorization_mode == 'default':
@@ -70,7 +69,7 @@ else:
     families_filter = [int(family) for family in families_filter_list.split(",")]
 
 
-PALETTE_MAXIMUM_NUMBER_OF_COLOURS = 11
+palette_color_range = 0
 CSV_OUTPUT_FOLDER = 'output'
 
 def run(lowerbound=2, upperbound=10):
@@ -80,6 +79,7 @@ def run(lowerbound=2, upperbound=10):
     global palette_name
     global palette
     global graph_mode
+    global palette_color_range
 
 
     start = datetime.now()
@@ -120,6 +120,43 @@ def run(lowerbound=2, upperbound=10):
     stash_log_file(CSV_OUTPUT_FOLDER, hard_copy_filename)
 
 
+def get_max_sum(limit: int, base: int):
+    '''
+    Get the sum of the first 'power' powers of 'base'
+    '''
+
+    counter = 0
+    sum = 0
+    while counter < limit:
+        sum += base**counter
+        counter += 1
+    
+    return sum
+
+
+def get_bucket_base(limit: int, volume: int):
+    '''
+    Calculate the base that offers bucket coverage for a maximum number of powers
+    '''
+
+    base = 1
+    max_sum = 0
+    while max_sum < volume:
+        base += 1
+        max_sum = get_max_sum(limit, base)
+    
+    return base
+
+
+def get_number_of_colors_in_palette(palette: Dict):
+    '''
+    Get the maximum number of colors, supported by the palette
+    '''
+    # HERE
+    count = sorted(palette.keys())[-1]
+    return count
+
+
 def create_visualization(number_list: List[Number]):
     '''
     Prepares the generated number data and uses it to create the visualization
@@ -133,7 +170,7 @@ def create_visualization(number_list: List[Number]):
         # [x] pour numbers into binary buckets
         sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
         sorted_buckets_list = sorted(buckets_list)
-        binary_buckets = get_binary_buckets(sorted_buckets_list, sorted_property_buckets)
+        binary_buckets = get_buckets(sorted_buckets_list, sorted_property_buckets)
 
     # [x] prep visualization data
     data_dict = {}
@@ -275,9 +312,11 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
     graph_point_size = graph_params['graph_point_size']
     palette = graph_params['palette']
 
-    if use_bucket_colorization and number_of_colors_required <= PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
+    if use_bucket_colorization and number_of_colors_required <= palette_color_range:
         factors_list = get_factors(number_of_colors_required)
         requested_number_of_colors = number_of_colors_required
+        # HERE failsafe; should be redundant;
+        # if the required number of colors does not exist in the palette, default to the 256 version of the palette
         if not number_of_colors_required in palette:
             number_of_colors_required = list(palette)[-1]
         color_mapper = CategoricalColorMapper(factors=factors_list, palette=palette[number_of_colors_required])
@@ -287,16 +326,17 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
             logger.info(f'{number_of_colors_required} color buckets created')
         graph.scatter(source=data, x='number', y=y_value, color={'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
         coloring = palette_name.lower()
-    elif number_of_colors_required > PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
+    # HERE should be redundant case
+    elif number_of_colors_required > palette_color_range:
         logger.info(f'Base coloring - {number_of_colors_required} colors exceeds palette range')
-        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
         base_color = '#3030ff'
         coloring = 'monocolor'
+        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
     else:
         logger.info('Base coloring - bucket colorization disabled')
-        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
         base_color = '#3030ff'
         coloring = 'monocolor'
+        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
 
     return graph, coloring
 
@@ -383,36 +423,41 @@ def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
     return filtered_property_buckets, trimmed_property_buckets
 
 
-def get_binary_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dict:
+def get_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dict:
     '''
-    Split numbers into binary buckets by a given property
+    Split numbers into buckets by a given property
 
-    The lowest bucket (highest index) contains half of the numbers
-    Each bucket above contains half as many members
-    The top bucket always contains the numbers with the single highest property
+    The first bucket contains numbers with one property value
+    The next bucket contains X times more property values than the previous one
+    X is determined so that the palette can cover all property values
     '''
+
+    global palette_color_range
 
     number_of_unassigned_buckets = len(sorted_buckets_list)
-    number_of_binary_buckets = get_power_of_n(number_of_unassigned_buckets, base=BASE)
+    palette_color_range = get_number_of_colors_in_palette(palette=palette)
+    bucket_base = get_bucket_base(palette_color_range, number_of_unassigned_buckets)
+    logger.info(f'Buckets to be distributed: {number_of_unassigned_buckets}')
+    logger.info(f'Base chosen: {bucket_base}')
+    number_of_binary_buckets = get_power_of_n(number_of_unassigned_buckets, base=bucket_base)
 
     # create binary bucket index map
     binary_bucket_index_map = {}
     binary_buckets = {}
 
     for counter in range(number_of_binary_buckets + 1):
-        bucket_count = pow(BASE, counter)
+        bucket_count = pow(bucket_base, counter)
         binary_bucket_index = counter
         binary_buckets[binary_bucket_index] = []
         filtered_property_bucket, sorted_property_buckets = filter_property_buckets(sorted_property_buckets, bucket_count)
-        if len(filtered_property_bucket):
+        if len(filtered_property_bucket) > 0:
             binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
             binary_bucket_index_map[binary_bucket_index] = []
             binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
             sorted_buckets_list = sorted_buckets_list[bucket_count:]
+        else:
+            binary_buckets.pop(binary_bucket_index)
 
-    # for number in sorted_property_buckets.items():
-    #     binary_bucket_index = get_binary_bucket_index(number[0], binary_bucket_index_map)
-    #     binary_buckets[binary_bucket_index].extend(number[1])
 
     return binary_buckets
 
