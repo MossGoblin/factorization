@@ -287,13 +287,15 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
             logger.info(f'{number_of_colors_required} color buckets created')
         graph.scatter(source=data, x='number', y=y_value, color={'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
         coloring = palette_name.lower()
-    else:
-        base_color = '#3030ff'
-        if number_of_colors_required > PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
-            logger.info('Base coloring - number count exceeds palette range')
-        else:
-            logger.info('Base coloring - bucket colorization disabled')
+    elif number_of_colors_required > PALETTE_MAXIMUM_NUMBER_OF_COLOURS:
+        logger.info(f'Base coloring - {number_of_colors_required} colors exceeds palette range')
         graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
+        base_color = '#3030ff'
+        coloring = 'monocolor'
+    else:
+        logger.info('Base coloring - bucket colorization disabled')
+        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
+        base_color = '#3030ff'
         coloring = 'monocolor'
 
     return graph, coloring
