@@ -592,6 +592,34 @@ def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, b
         return list_string
 
 
+def number_list_to_dict(number_list: List):
+    
+    def prime_factors_list_to_string(prime_factors: List):
+        prime_factors_string = ",".join([str(factor) for factor in prime_factors])
+        return prime_factors_string
+
+    print('number_list_to_dict')
+    number_dict = {}
+    number_dict['value'] = []
+    number_dict['is_prime'] = []
+    number_dict['prime_mean'] = []
+    number_dict['prime_factors'] = []
+    number_dict['division_family'] = []
+    number_dict['mean_deviation'] = []
+    number_dict['antislope'] = []
+
+    for number in number_list:
+        number_dict['value'].append(number.value)
+        number_dict['is_prime'].append(number.is_prime)
+        number_dict['prime_mean'].append(number.prime_mean)
+        number_dict['prime_factors'].append(prime_factors_list_to_string(number.prime_factors))
+        number_dict['division_family'].append(number.division_family)
+        number_dict['mean_deviation'].append(number.mean_deviation)
+        number_dict['antislope'].append(number.antislope)
+
+    return number_dict
+
+
 def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_filter: list[int] = []):
     '''
     Generate a list of Number objects
@@ -634,6 +662,36 @@ def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_fil
             for index, item in enumerate(families_filter):
                 logger.info(f"Numbers count in family {item}: {families_filter_counter[index]}")
 
+
+    # TEST df to sql
+    from sqlalchemy import create_engine
+    from sqlalchemy.types import DECIMAL
+
+
+    db_file = 'numbers.db'
+
+
+
+    # TEST Check if a db file exists
+    if os.path.isfile(db_file):
+
+        engine = create_engine('sqlite:///' + db_file)
+
+        # TEST sql db to df
+        df_to_read = pd.read_sql("SELECT * FROM Numbers", engine)
+        print(df_to_read)
+
+    else:
+        engine = create_engine('sqlite:///' + db_file)
+
+    data = number_list_to_dict(number_list)
+    df_to_write = pd.DataFrame(data)
+    df_to_write.to_sql('Numbers', con=engine, if_exists='append', dtype = {"antislope" : DECIMAL})
+
+
+
+    # Close the Database connection
+    engine.dispose()
 
     return number_list
 

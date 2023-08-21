@@ -12,7 +12,6 @@ class Number():
             self.prime_mean = 0
             self.prime_factors = []
             self.division_family = 1
-            self.prime_mean = 0
             self.mean_deviation = 0
             self.antislope = 0
             self.antislope_string = "0"
