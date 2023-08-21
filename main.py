@@ -5,7 +5,6 @@ from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
 from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Category10, Dark2
 from datetime import datetime
-import logging
 import math
 import os
 import pyprimes as pp
@@ -14,30 +13,14 @@ import pandas as pd
 from progress.bar import Bar
 
 import lab
+import logger_service
 import mappings
 from number import Number
 
+logger_name = 'run.log'
 #remove old log file
-if os.path.isfile('run.log'):
-    os.remove('run.log')
-# create logger
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# create console handler
-sh = logging.StreamHandler()
-# create file handler
-fh = logging.FileHandler('run.log')
-# create formatter
-formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# add formatter to sh
-sh.setFormatter(formatter)
-# add formatter to fh
-fh.setFormatter(formatter)
-# add sh to logger
-logger.addHandler(sh)
-logger.addHandler(fh)
 
+logger = logger_service.get_logger(logger_name)
 
 config = ConfigParser()
 config.read('config.ini')
