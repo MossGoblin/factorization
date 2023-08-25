@@ -1,5 +1,4 @@
 import collections
-from configparser import ConfigParser
 from bokeh.plotting import figure, show
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
@@ -12,45 +11,37 @@ from typing import List, Dict, Tuple
 import pandas as pd
 from progress.bar import Bar
 
+from toolbox.config_agent import ConfigAgent
 import toolbox.lab as lab
 import toolbox.logger_service as logger_service
 import toolbox.mappings as mappings
 from toolbox.number import Number
 
 logger_name = 'run.log'
-#remove old log file
+config_name = 'config.ini'
 
 logger = logger_service.get_logger(logger_name)
+config_agent = ConfigAgent(config_path=config_name, autocast=True, hierarchical_names=True, strict_autocast=False, overwrite=True)
 
-config = ConfigParser()
-config.read('config.ini')
-
-lowerbound = int(config.get('range', 'lowerbound'))
-upperbound = int(config.get('range', 'upperbound'))
+lowerbound = config_agent.range_lowerbound
+upperbound = config_agent.range_upperbound
 
 # RUN parameters
-use_bucket_colorization = True if config.get(
-    'graph', 'use_color_buckets') == 'true' else False
-include_primes = True if config.get(
-    'run', 'include_primes') == 'true' else False
-create_csv = config.get('run', 'create_csv')
+use_bucket_colorization = config_agent.graph_use_color_buckets
+include_primes = config_agent.run_include_primes
+create_csv = config_agent.run_create_csv
 palette = Turbo
-palette_name = config.get('graph', 'palette')
-graph_mode = config.get('graph', 'visualization_mode')
-colorization_mode = config.get('graph', 'colorization_mode')
+palette_name = config_agent.graph_palette
+graph_mode = config_agent.graph_visualization_mode
+colorization_mode = config_agent.graph_colorization_mode
 if colorization_mode == 'default':
     colorization_mode = graph_mode
-property_rounding = config.get('graph', 'property_rounding')
-full_antislope_display = True if config.get(
-    'graph', 'full_antislope_display') == 'true' else False
+property_rounding = config_agent.graph_property_rounding
+full_antislope_display = config_agent.graph_full_antislope_display
 try:
-    families_filter_list = config.get('filter', 'families')
-    families_filter_list = families_filter_list.replace(' ', '')
+    families_filter = config_agent.filter_families
 except:
     families_filter = []
-else:
-    families_filter = [int(family) for family in families_filter_list.split(",")]
-
 
 palette_color_range = 0
 CSV_OUTPUT_FOLDER = 'output'
@@ -205,8 +196,8 @@ def create_visualization(number_list: List[Number]):
     logger.info(f'Data collated')
 
     # [x] create plot
-    plot_width = int(config.get('graph', 'width'))
-    plot_height = int(config.get('graph', 'height'))
+    plot_width = config_agent.graph_width
+    plot_height = config_agent.graph_height
     family_filter_text = " All families."
     if len(families_filter) > 0 and len(families_filter) <= 5:
         family_filter_text = " Families: " + ", ".join([str(family) for family in families_filter]) + "."
@@ -242,7 +233,7 @@ def create_visualization(number_list: List[Number]):
     # [x] add graph
     if use_bucket_colorization:
         number_of_colors = len(binary_buckets)
-    graph_point_size = int(config.get('graph', 'point_size'))
+    graph_point_size = config_agent.graph_point_size
 
     # graph_params['type'] = 'scatter' # This does not seem to be necessary
     graph_params['y_value'] = mappings.y_axis_values[graph_mode]
@@ -515,7 +506,7 @@ def prep_output_folder(folder_name: str):
         os.mkdir(folder_name)
         return
     else:
-        if config.get('run', 'reset_output_data') == 'true':
+        if config_agent.run_reset_output_data:
             for root, directories, files in os.walk(folder_name):
                 for file in files:
                     file_path = root + '/' + file
@@ -552,8 +543,7 @@ def generate_timestamp():
     '''
 
     timestamp_format = ''
-    timestamp_granularity = int(config.get(
-        'run', 'hard_copy_timestamp_granularity'))
+    timestamp_granularity = config_agent.run_hard_copy_timestamp_granularity
     format_chunks = ['%d%m%Y', '_%H', '%M', '%S']
     for chunk_index in range(timestamp_granularity + 1):
         timestamp_format += format_chunks[chunk_index]
