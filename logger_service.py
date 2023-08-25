@@ -2,18 +2,20 @@ import os
 import logging
 
 def get_logger(logger_name: str) -> logging.Logger:
-    if os.path.isfile('run.log'):
-        os.remove('run.log')
+    if os.path.isfile(logger_name):
+        os.remove(logger_name)
     # create logger
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
     # create console handler
     sh = logging.StreamHandler()
     # create file handler
-    fh = logging.FileHandler('run.log')
+    fh = logging.FileHandler(logger_name)
     # create formatter
+    # formatter = logging.Formatter(
+    #     "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+        "%(asctime)s - %(levelname)s - %(message)s")
     # add formatter to sh
     sh.setFormatter(formatter)
     # add formatter to fh

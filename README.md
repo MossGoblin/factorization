@@ -4,7 +4,7 @@
 
 The main.html file in the root folder is exported by the bokeh visualization library on each run.
 
-The 'output' folder contains a pair of files, saved from previous runs - a .csv file and a .html file with the same names. The .csv files contains the collated data, the .html file is the graph itself.
+The 'output' folder contains three files for each run - a .csv file with the generated data, an .html file with the generated plot and a .log file with the run logs.
 
 The main html file can be viewed by opening the following link:
 
@@ -26,7 +26,7 @@ To view such a file, do the following:
 
 # Blowing up composite numbers
 
-## Explanation of the idea:
+## Explanation of the idea
 
 *Disclaimer*: prime numbers are not mentioned in the explanation as being extreme (in the terms of what is described below). All of the below works for them, but I don't think they bring much to the table at this point.
 
@@ -64,7 +64,7 @@ And since the more factors you use, the larger the area, this means that the pri
 
 This all means that the prime factorization of the composite number gives the dimensions of the most 'blown up' possible object of that size.
 
-### Next.
+### Next
 
 It is clear that 2 x 2 x 3 is not the most symmetrical object ever, but that's a close to symmetry as it can be done with size 12.
 For comparison, 8 blows up to a perfect n-cube - each dimension reading a value of 2.

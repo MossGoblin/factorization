@@ -7,10 +7,12 @@
 
 - [ ] add Fire() run option ?
 - [x] add main.html renaming after generating
-- [ ] align binary buckets with graph mode
-- [ ] reverse binary buckets logic to ensure bucket size compliance with powers of 2
+- [x] align binary buckets with graph mode
+- [x] reverse binary buckets logic to ensure bucket size compliance with powers of 2
 - [ ] see about exporting to PNG of SVG
 - [ ] extract utility methods in a separate file?
+  - [x] logger_service
+  - [ ] config_service
 - [x] add family filter to filenames
 
 ---
