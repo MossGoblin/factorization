@@ -18,7 +18,7 @@ To view an html file from the output folder, do the following:
 
 To view such a file, do the following:
 
-1. Copy the link to the .html file from the repo - for example https://github.com/MossGoblin/factorization/blob/master/main_1000000.html
+1. Copy the link to the .html file from the repo - for example https://github.com/MossGoblin/factorization/blob/master/main_100000.html
 2. Go to https://raw.githack.com and paste the link there
 3. Copy one of the resulting URLs, preferably the one for development, and open it in your browser.
 
