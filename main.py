@@ -12,10 +12,10 @@ from typing import List, Dict, Tuple
 import pandas as pd
 from progress.bar import Bar
 
-import lab
-import logger_service
-import mappings
-from number import Number
+import toolbox.lab as lab
+import toolbox.logger_service as logger_service
+import toolbox.mappings as mappings
+from toolbox.number import Number
 
 logger_name = 'run.log'
 #remove old log file

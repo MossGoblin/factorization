@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-import lab
+import toolbox.lab as lab
 
 
 class Number():
