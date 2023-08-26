@@ -12,7 +12,6 @@ import pandas as pd
 from progress.bar import Bar
 
 from toolbox.config_agent import ConfigAgent
-import toolbox.lab as lab
 import toolbox.logger_service as logger_service
 import toolbox.mappings as mappings
 from toolbox.number import Number
@@ -587,7 +586,7 @@ def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_fil
             # exclude number if it fails the families filter
             if len(families_filter) > 0:
                 calculate_division_family = False
-                division_family = lab.get_division_family(value)
+                division_family = Number.get_division_family(value)
                 if not division_family in families_filter:
                     continue
             else:
