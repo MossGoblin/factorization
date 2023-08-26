@@ -7,7 +7,7 @@ from typing import List
 class Number():
 
     def __init__(self, value, division_family, calculate_division_family=False):
-        self.value = value
+        self.value = int(value)
         self.is_prime = pp.isprime(value)
         if self.value == 1:
             self.prime_mean = 0
