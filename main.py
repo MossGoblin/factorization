@@ -20,25 +20,25 @@ logger_name = 'run.log'
 config_name = 'config.ini'
 
 logger = logger_service.get_logger(logger_name)
-cfg = ConfigAgent(config_path=config_name, autocast=True, hierarchical_names=True, strict_autocast=False, overwrite=True)
+cfg = ConfigAgent(config_path=config_name, autocast=True, strict_autocast=True)
 
-lowerbound = cfg.range_lowerbound
-upperbound = cfg.range_upperbound
+lowerbound = cfg.range.lowerbound
+upperbound = cfg.range.upperbound
 
 # RUN parameters
-use_bucket_colorization = cfg.graph_use_color_buckets
-include_primes = cfg.run_include_primes
-create_csv = cfg.run_create_csv
+use_bucket_colorization = cfg.graph.use_color_buckets
+include_primes = cfg.run.include_primes
+create_csv = cfg.run.create_csv
 palette = Turbo
-palette_name = cfg.graph_palette
-graph_mode = cfg.graph_visualization_mode
-colorization_mode = cfg.graph_colorization_mode
+palette_name = cfg.graph.palette
+graph_mode = cfg.graph.visualization_mode
+colorization_mode = cfg.graph.colorization_mode
 if colorization_mode == 'default':
     colorization_mode = graph_mode
-property_rounding = cfg.graph_property_rounding
-full_antislope_display = cfg.graph_full_antislope_display
+property_rounding = cfg.graph.property_rounding
+full_antislope_display = cfg.graph.full_antislope_display
 try:
-    families_filter = cfg.filter_families
+    families_filter = cfg.filter.families
 except:
     families_filter = []
 
@@ -195,8 +195,8 @@ def create_visualization(number_list: List[Number]):
     logger.info(f'Data collated')
 
     # [x] create plot
-    plot_width = cfg.graph_width
-    plot_height = cfg.graph_height
+    plot_width = cfg.graph.width
+    plot_height = cfg.graph.height
     family_filter_text = " All families."
     if len(families_filter) > 0 and len(families_filter) <= 5:
         family_filter_text = " Families: " + ", ".join([str(family) for family in families_filter]) + "."
@@ -232,7 +232,7 @@ def create_visualization(number_list: List[Number]):
     # [x] add graph
     if use_bucket_colorization:
         number_of_colors = len(binary_buckets)
-    graph_point_size = cfg.graph_point_size
+    graph_point_size = cfg.graph.point_size
 
     # graph_params['type'] = 'scatter' # This does not seem to be necessary
     graph_params['y_value'] = mappings.y_axis_values[graph_mode]
@@ -505,7 +505,7 @@ def prep_output_folder(folder_name: str):
         os.mkdir(folder_name)
         return
     else:
-        if cfg.run_reset_output_data:
+        if cfg.run.reset_output_data:
             for root, directories, files in os.walk(folder_name):
                 for file in files:
                     file_path = root + '/' + file
@@ -542,7 +542,7 @@ def generate_timestamp():
     '''
 
     timestamp_format = ''
-    timestamp_granularity = cfg.run_hard_copy_timestamp_granularity
+    timestamp_granularity = cfg.run.hard_copy_timestamp_granularity
     format_chunks = ['%d%m%Y', '_%H', '%M', '%S']
     for chunk_index in range(timestamp_granularity + 1):
         timestamp_format += format_chunks[chunk_index]

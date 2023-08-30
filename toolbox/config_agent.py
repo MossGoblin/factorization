@@ -1,17 +1,18 @@
 from configparser import ConfigParser
 
+class ConfigCategory():
+    def __init__(self, category_name: str):
+        self.name = category_name
+
+
 
 class ConfigAgent():
     """
         A class used to load a config file
 
-        A class attribute is created for each parameter from the config file
+        For each config category an instance of ConfigCategory() is created as a class attribute of ConfigAgent
 
-            If autocast is set to True, the ConfigAgent tries to cast each variable in the following order:
-
-            int, float, bool, list[int]
-
-            If none of the casts succeeds, the parameter type defaults to string
+        Each parameter in a category is set a class attribute of the corresponding ConfigCategory()
         ...
 
         Attributes
@@ -32,62 +33,47 @@ class ConfigAgent():
 
     def __init__(self, 
                  config_path: str, 
-                 autocast: bool = False, 
-                 hierarchical_names: bool = True,
-                 strict_autocast: bool = False, 
-                 overwrite: bool = True):
+                 autocast: bool = True, 
+                 strict_autocast: bool = True,
+                 category_prefix: str = ''):
         """
         Parameters
         ----------
         config_path : str
             The full path of the config file
         autocast : bool, optional
-            If True, the ConfigAgent tries to cast each parameter to a type (default is False)
-        hierarchical_names : bool, optional
-            If True, the class attribute names are created as [section]_[parameter] (default is True)
+            If True, the ConfigAgent tries to cast each parameter to a type (default is True)
         strict_autocast : bool, optional
-            If True and autocast == True, failing to cast a parameter raises an Exception (default is False)
-        overwrite : bool, optional
-            If True and autocast == True, cast parameters replace non-cast ones; otherwise a duplicate set with the prefix 'cast_' is created (default is True)
+            If True and autocast == True, failing to cast a parameter raises an Exception (default is True)
+        category_prefix : bool, optional
+            If True the names of the category objects will be prefixed by the passed string (default is an empty string)
         """
         self.config_path = config_path
         self.config = ConfigParser()
-        self._read_data(hierarchical_names)
-        if autocast:
-            self._cast_content(strict_autocast, hierarchical_names, overwrite)
+        self._read_data(autocast, strict_autocast, category_prefix)
+
 
     def get_config(self) -> ConfigParser:
         return self.config
 
-    def _read_data(self, hierarchical_names: bool) -> None:
+    def _read_data(self, autocast, strict_autocast: bool, category_prefix: str):
         self.config.read(self.config_path)
         for section in self.config.sections():
+            section_name = category_prefix + '_' + section if category_prefix != '' else section
+            new_section = ConfigCategory(section_name)
             for parameter in self.config[section]:
-                if hierarchical_names:
-                    field_name = "_".join([section, parameter])
-                else:
-                    field_name = parameter
-                setattr(self, field_name, self.config[section][parameter])
-
-    def _cast_content(self, strict_autocast: bool, hierarchical_names: bool, overwrite: bool):
-        for section in self.config.sections():
-            for parameter in self.config[section]:
-                try:
-                    cast_param = self._try_cast(self.config[section][parameter])
-                    if hierarchical_names:
-                        prefix = "_".join([section, parameter])
+                    if autocast:
+                        try:
+                            parameter_value = self._try_cast(self.config[section][parameter])
+                        except Exception as e:
+                            if strict_autocast:
+                                raise Exception (f'Autocast failed: {e}')
+                            else:
+                                pass
                     else:
-                        prefix = parameter
-                    if overwrite:
-                        field_name = prefix
-                    else:
-                        field_name = "_".join(['cast', prefix])
-                    setattr(self, field_name, cast_param)
-                except Exception as e:
-                    if strict_autocast:
-                        raise Exception (f'Autocast failed: {e}')
-                    else:
-                        pass
+                        parameter_value = self.config[section][parameter]
+                    setattr(new_section, parameter, parameter_value)
+            setattr(self, section_name, new_section)
 
     def _try_cast(self, param: str):
         try:
