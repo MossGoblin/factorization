@@ -95,7 +95,7 @@ List the numbers, calculate the mean deviations and plot them.
 
 **Graph**
 
-The x-axis are the composite numbers (primes are excluded by default, but can be included by changing the value of include_primes in config.ini to true)
+The x-axis are the composite numbers (primes are excluded by default, but can be included by changing the value of include_primes in config.toml to true)
 
 The y-axis are the calculated mean prime factor deviations.
 

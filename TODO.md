@@ -26,7 +26,7 @@
 - [x] add logger
 - [x] add .csv output
 - [x] documentation
-  - [x] full comments for .ini
+  - [x] full comments for .toml
 - [x] find out the max colors from palette
 - [x] find if anything can be gathered by slope
 - [x] add filter by families

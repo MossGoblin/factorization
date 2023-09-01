@@ -1,7 +1,8 @@
-from decimal import Decimal
 import math
-import pyprimes as pp
+from decimal import Decimal
 from typing import List
+
+import pyprimes as pp
 
 
 class Number():

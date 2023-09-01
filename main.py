@@ -1,26 +1,28 @@
 import collections
-from bokeh.plotting import figure, show
-from bokeh import models as models
-from bokeh.models import ColumnDataSource, CategoricalColorMapper
-from bokeh.palettes import Magma, Inferno, Plasma, Viridis, Cividis, Turbo, Category10, Dark2
-from datetime import datetime
 import math
 import os
-import pyprimes as pp
-from typing import List, Dict, Tuple
+from datetime import datetime
+from typing import Dict, List, Tuple
+
 import pandas as pd
+import pyprimes as pp
+from bokeh import models as models
+from bokeh.models import CategoricalColorMapper, ColumnDataSource
+from bokeh.palettes import (Category10, Cividis, Dark2, Inferno, Magma, Plasma,
+                            Turbo, Viridis)
+from bokeh.plotting import figure, show
 from progress.bar import Bar
 
-from toolbox.config_agent import ConfigAgent
 import toolbox.logger_service as logger_service
 import toolbox.mappings as mappings
+from toolbox.config_agent import ConfigAgent
 from toolbox.number import Number
 
 logger_name = 'run.log'
-config_name = 'config.ini'
+config_name = 'config.toml'
 
 logger = logger_service.get_logger(logger_name)
-cfg = ConfigAgent(config_path=config_name, autocast=True, strict_autocast=True)
+cfg = ConfigAgent(config_path=config_name)
 
 lowerbound = cfg.range.lowerbound
 upperbound = cfg.range.upperbound
@@ -39,7 +41,7 @@ property_rounding = cfg.graph.property_rounding
 full_antislope_display = cfg.graph.full_antislope_display
 try:
     families_filter = cfg.filter.families
-except:
+except AttributeError:
     families_filter = []
 
 palette_color_range = 0
@@ -262,7 +264,7 @@ def create_visualization(number_list: List[Number]):
         path = CSV_OUTPUT_FOLDER + '\\'
         prep_output_folder(CSV_OUTPUT_FOLDER)
         data_df.to_csv(path + full_hard_copy_filename)
-        logger.info(f'Data saved as output\{full_hard_copy_filename}')
+        logger.info(f'Data saved as output\full_hard_copy_filename')
 
     # [x] show
     logger.info('Graph generated')
@@ -538,7 +540,7 @@ def get_colour_bucket_index(binary_buckets: Dict, value: int) -> int:
 
 def generate_timestamp():
     '''
-    Generate timestamp string, depending on the desired granularity, set in config.ini
+    Generate timestamp string, depending on the desired granularity, set in config.toml
     '''
 
     timestamp_format = ''
