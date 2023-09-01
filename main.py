@@ -2,21 +2,27 @@ import collections
 import math
 import os
 from datetime import datetime
-from typing import Dict, List, Tuple
 
 import pandas as pd
-import pyprimes as pp
-from bokeh import models as models
-from bokeh.models import CategoricalColorMapper, ColumnDataSource
-from bokeh.palettes import (Category10, Cividis, Dark2, Inferno, Magma, Plasma,
-                            Turbo, Viridis)
-from bokeh.plotting import figure, show
 from progress.bar import Bar
 
 import toolbox.logger_service as logger_service
 import toolbox.mappings as mappings
+from toolbox.bokeh_agent import Bokeh_Agent
 from toolbox.config_agent import ConfigAgent
 from toolbox.number import Number
+from toolbox.utils import (
+    generate_number_list,
+    generate_timestamp,
+    get_bucket_base,
+    get_factors,
+    get_number_of_colors_in_palette,
+    get_palette,
+    get_power_of_n,
+    int_list_to_str,
+    prep_output_folder,
+    split_prime_factors,
+)
 
 logger_name = 'run.log'
 config_name = 'config.toml'
@@ -24,14 +30,16 @@ config_name = 'config.toml'
 logger = logger_service.get_logger(logger_name)
 cfg = ConfigAgent(config_path=config_name)
 
+
+
 lowerbound = cfg.range.lowerbound
 upperbound = cfg.range.upperbound
 
 # RUN parameters
 use_bucket_colorization = cfg.graph.use_color_buckets
+use_bucket_colorization = cfg.graph.use_color_buckets
 include_primes = cfg.run.include_primes
 create_csv = cfg.run.create_csv
-palette = Turbo
 palette_name = cfg.graph.palette
 graph_mode = cfg.graph.visualization_mode
 colorization_mode = cfg.graph.colorization_mode
@@ -39,104 +47,20 @@ if colorization_mode == 'default':
     colorization_mode = graph_mode
 property_rounding = cfg.graph.property_rounding
 full_antislope_display = cfg.graph.full_antislope_display
+graph_point_size = cfg.graph.point_size
 try:
     families_filter = cfg.filter.families
 except AttributeError:
     families_filter = []
 
+x_axis = 'number'
+y_axis = mappings.y_axis_values[graph_mode]
+
 palette_color_range = 0
 CSV_OUTPUT_FOLDER = 'output'
 
-def run(lowerbound=2, upperbound=10):
-    global include_primes
-    global create_csv
-    global use_bucket_colorization
-    global palette_name
-    global palette
-    global graph_mode
-    global palette_color_range
 
-
-    start = datetime.now()
-    logger.info(f'Start at {start}')
-    logger.info(f'* Range [{lowerbound}..{upperbound}]')
-    families_list_str = [str(family) for family in families_filter]
-    filter_text = ": All" if len(families_filter) == 0 else " [ " + ", ".join(families_list_str) + " ]"
-    logger.info(f'* Families{filter_text}')
-    logger.info(f'* Graph mode: "{graph_mode}"')
-    logger.info(f'* Colorization mode: "{colorization_mode}"')
-    include_primes_message = '* Primes included' if include_primes else '* Primes NOT included'
-    logger.info(include_primes_message)
-    create_csv_message = '* CSV output included' if create_csv else '* No CVS output'
-    logger.info(create_csv_message)
-    palette_name_string = 'Default (Turbo)' if palette_name == 'Default' else palette_name
-    bucket_colorization_message = f'* Bucket colorization enabled: {palette_name_string}' if use_bucket_colorization else '* Monocolor enabled'
-    logger.info(bucket_colorization_message)
-    palette = get_palette(palette_name=palette_name)
-
-    # [x] iterate between bounds and cache numbers
-    number_list = generate_number_list(lowerbound=lowerbound, upperbound=upperbound, families_filter=families_filter)
-    if len(number_list) == 0:
-        logger.info(f'No composites generated. Terminating the program.')
-        end = datetime.now()
-        logger.info(f'End at {end}')
-        logger.info(f'Total time: {end-start}')
-        quit()
-    logger.info(f'Numbers iterated {lowerbound}..{upperbound}')
-    logger.info(f'Total composites: {len(number_list)}')
-
-    # [x] create visualization
-    hard_copy_filename = create_visualization(number_list)
-    end = datetime.now()
-    logger.info(f'End at {end}')
-    logger.info(f'Total time: {end-start}')
- 
-    stash_graph_html(CSV_OUTPUT_FOLDER, hard_copy_filename)
-    stash_log_file(CSV_OUTPUT_FOLDER, hard_copy_filename)
-
-
-def get_max_sum(limit: int, base: int):
-    '''
-    Get the sum of the first 'power' powers of 'base'
-    '''
-
-    counter = 0
-    sum = 0
-    while counter < limit:
-        sum += base**counter
-        counter += 1
-    
-    return sum
-
-
-def get_bucket_base(limit: int, volume: int):
-    '''
-    Calculate the base that offers bucket coverage for a maximum number of powers
-    '''
-
-    base = 1
-    max_sum = 0
-    while max_sum < volume:
-        base += 1
-        max_sum = get_max_sum(limit, base)
-    
-    return base
-
-
-def get_number_of_colors_in_palette(palette: Dict):
-    '''
-    Get the maximum number of colors, supported by the palette
-    '''
-    # HERE
-    count = sorted(palette.keys())[-1]
-    return count
-
-
-def create_visualization(number_list: List[Number]):
-    '''
-    Prepares the generated number data and uses it to create the visualization
-    '''
-
+def collate_date(number_list: list[Number], palette):
     if use_bucket_colorization:
         # [x] separate numbers into binary buckets by closest integer to a given property
         # [x] get primary slope buckets
@@ -145,7 +69,7 @@ def create_visualization(number_list: List[Number]):
         # [x] pour numbers into binary buckets
         sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
         sorted_buckets_list = sorted(buckets_list)
-        binary_buckets = get_buckets(sorted_buckets_list, sorted_property_buckets)
+        binary_buckets = get_buckets(sorted_buckets_list, sorted_property_buckets, palette)
 
     # [x] prep visualization data
     data_dict = {}
@@ -191,12 +115,12 @@ def create_visualization(number_list: List[Number]):
             if use_bucket_colorization:
                 data_dict['color_bucket'].append(get_colour_bucket_index(binary_buckets, number.value))
 
-    data_df = pd.DataFrame(data_dict)
-    data_df.reset_index()
-    data = ColumnDataSource(data=data_df)
-    logger.info(f'Data collated')
+    return binary_buckets, data_dict
 
-    # [x] create plot
+
+def create_graph_params(data_dict: dict, binary_buckets: dict, palette):
+    if use_bucket_colorization:
+        number_of_colors = len(binary_buckets)
     plot_width = cfg.graph.width
     plot_height = cfg.graph.height
     family_filter_text = " All families."
@@ -212,10 +136,18 @@ def create_visualization(number_list: List[Number]):
     graph_params['y_axis_label'] = mappings.y_axis_label[graph_mode]
     graph_params['width'] = plot_width
     graph_params['height'] = plot_height
+    graph_params['use_bucket_colorization'] = use_bucket_colorization
+    graph_params['number_of_colors'] = number_of_colors
+    graph_params['factors_list'] = get_factors(number_of_colors)
+    graph_params['palette'] = palette
+    graph_params['point_size'] = graph_point_size
+    graph_params['x_axis'] = x_axis
+    graph_params['y_axis'] = y_axis
 
-    graph = get_figure(graph_params)
+    return graph_params
 
-    # [x] add hover tool
+
+def create_plot_tooltips():
     tooltips = [('number', '@number')]
     if include_primes:
         tooltips.append(('prime', '@is_prime'))
@@ -227,53 +159,11 @@ def create_visualization(number_list: List[Number]):
                     ('largest prime factor', '@largest_prime_factor'),
                     ('division family', '@div_family'),
                      ])
-
-    hover = models.HoverTool(tooltips=tooltips)
-    graph.add_tools(hover)
-
-    # [x] add graph
-    if use_bucket_colorization:
-        number_of_colors = len(binary_buckets)
-    graph_point_size = cfg.graph.point_size
-
-    # graph_params['type'] = 'scatter' # This does not seem to be necessary
-    graph_params['y_value'] = mappings.y_axis_values[graph_mode]
-    graph_params['graph_point_size'] = graph_point_size
-    graph_params['use_bucket_colorization'] = use_bucket_colorization
-    if use_bucket_colorization:
-        graph_params['number_of_colors'] = number_of_colors
-        graph_params['factors_list'] = get_factors(number_of_colors)
-    graph_params['palette'] = palette
-
-    graph, coloring = create_graph(graph, data, graph_params)
-
-    # [x] 'hard copy'
-    graph_mode_chunk = mappings.graph_mode_filename_chunk[graph_mode]
-    timestamp_format = generate_timestamp()
-    timestamp = datetime.utcnow().strftime(timestamp_format)
-    primes_included = 'primes' if include_primes else 'no_primes'
-    families_string = "All"
-    if len(families_filter) > 0 and len(families_filter) <= 5:
-        families_string = "_".join([str(family) for family in families_filter])
-    elif len(families_filter) > 0:
-        families_string = "__".join([str(families_filter[0]), str(families_filter[-1])])
-    hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
-        '_' + graph_mode_chunk + '_' + primes_included + '_' + families_string + '_' + coloring + '_' + timestamp
-    if create_csv:
-        full_hard_copy_filename = hard_copy_filename + '.csv'
-        path = CSV_OUTPUT_FOLDER + '\\'
-        prep_output_folder(CSV_OUTPUT_FOLDER)
-        data_df.to_csv(path + full_hard_copy_filename)
-        logger.info(f'Data saved as output\full_hard_copy_filename')
-
-    # [x] show
-    logger.info('Graph generated')
-    show(graph)
-
-    return hard_copy_filename
+    
+    return tooltips
 
 
-def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> figure:
+def create_colorization(graph_params: dict) -> (list[int], str):
     '''
     Creates a scatter plot by given parameters
     '''
@@ -283,37 +173,66 @@ def create_graph(graph: figure, data: ColumnDataSource, graph_params: Dict) -> f
     if use_bucket_colorization:
         number_of_colors_required = graph_params['number_of_colors']
         factors_list = graph_params['factors_list']
-    y_value = graph_params['y_value']
-    graph_point_size = graph_params['graph_point_size']
     palette = graph_params['palette']
 
     if use_bucket_colorization and number_of_colors_required <= palette_color_range:
         factors_list = get_factors(number_of_colors_required)
         requested_number_of_colors = number_of_colors_required
-        # HERE failsafe; should be redundant;
-        # if the required number of colors does not exist in the palette, default to the 256 version of the palette
         if not number_of_colors_required in palette:
             number_of_colors_required = list(palette)[-1]
-        color_mapper = CategoricalColorMapper(factors=factors_list, palette=palette[number_of_colors_required])
         if requested_number_of_colors != number_of_colors_required:
             logger.info(f'{requested_number_of_colors} colors unavailable. {number_of_colors_required} color buckets created')
         else:
             logger.info(f'{number_of_colors_required} color buckets created')
-        graph.scatter(source=data, x='number', y=y_value, color={'field': 'color_bucket', 'transform': color_mapper}, size=graph_point_size)
         coloring = palette_name.lower()
-    # HERE should be redundant case
     elif number_of_colors_required > palette_color_range:
         logger.info(f'Base coloring - {number_of_colors_required} colors exceeds palette range')
-        base_color = '#3030ff'
         coloring = 'monocolor'
-        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
     else:
         logger.info('Base coloring - bucket colorization disabled')
-        base_color = '#3030ff'
         coloring = 'monocolor'
-        graph.scatter(source=data, x='number', y=y_value, color=base_color, size=graph_point_size)
 
-    return graph, coloring
+    return factors_list, coloring
+
+
+def visualize_data(number_list: list[Number], palette):
+    '''
+    Prepares the generated number data and uses it to create the visualization
+    '''
+    
+    # plot
+    plot = Bokeh_Agent()
+
+    # data
+    binary_buckets, data_dict = collate_date(number_list, palette)
+    data_df = pd.DataFrame(data_dict)
+    data_df.reset_index()
+    plot.set_data(data_df)
+    logger.info(f'Data collated')    
+
+    # graph parameters
+    graph_params = create_graph_params(data_dict, binary_buckets, palette)
+    plot.set_params(graph_params)
+    logger.debug('Graph params collated')
+
+    # coloring
+    color_factors, coloring = create_colorization(graph_params)
+    plot.set_color_factors(color_factors)
+    logger.debug('Color factors set')
+
+    # tooltips
+    tooltips = create_plot_tooltips()
+    plot.set_tooltips(tooltips)
+    logger.debug('Tooltips set')
+
+    # generate plot
+    plot.generate()
+    logger.info('Graph generated')
+
+    # [x] show
+    plot.display_graph()
+
+    return data_df, coloring
 
 
 def stash_graph_html(csv_output_folder, graph_filename: str):
@@ -338,51 +257,7 @@ def stash_log_file(csv_output_folder, log_filename):
             stashed_log_output_file.write(content)
 
 
-def get_palette(palette_name: str) -> palette:
-    '''
-    Returns a bokeh palette, corresponding to a given str palette name
-    '''
-
-    # Magma, Inferno, Plasma, Viridis, Cividis, Turbo
-    if palette_name == 'Magma':
-        return Magma
-    elif palette_name == 'Inferno':
-        return Inferno
-    elif palette_name == 'Plasma':
-        return Plasma
-    elif palette_name == 'Viridis':
-        return Viridis
-    elif palette_name == 'Cividis':
-        return Cividis
-    elif palette_name == 'Turbo':
-        return Turbo
-    elif palette_name == 'Category10':
-        return Category10
-    elif palette_name == 'Dark2':
-        return Dark2
-    else:
-        return Turbo
-
-
-def get_figure(params: Dict) -> figure:
-    '''
-    Returns a figure with the provided parameters
-    '''
-    title = params['title']
-    y_axis_label = params['y_axis_label']
-    width = params['width']
-    height = params['height']
-
-    return figure(title=title, x_axis_label='number', y_axis_label=y_axis_label, width=width, height=height)
-
-
-def split_prime_factors(int_list: List[int]) -> int:
-    sorted_int_list = sorted(int_list)
-    
-    return sorted_int_list[:-1], sorted_int_list[-1]
-
-
-def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
+def filter_property_buckets(sorted_property_buckets: dict, cut_off_value: int):
     trimmed_property_buckets = {}
     for index, item in sorted_property_buckets.items():
         trimmed_property_buckets[index] = item
@@ -398,7 +273,7 @@ def filter_property_buckets(sorted_property_buckets: Dict, cut_off_value: int):
     return filtered_property_buckets, trimmed_property_buckets
 
 
-def get_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dict:
+def get_buckets(sorted_buckets_list: list, sorted_property_buckets: dict, palette) -> dict:
     '''
     Split numbers into buckets by a given property
 
@@ -433,11 +308,10 @@ def get_buckets(sorted_buckets_list: List, sorted_property_buckets: Dict) -> Dic
         else:
             binary_buckets.pop(binary_bucket_index)
 
-
     return binary_buckets
 
 
-def get_binary_bucket_index(property: int, binary_bucket_index_map: Dict) -> int:
+def get_binary_bucket_index(property: int, binary_bucket_index_map: dict) -> int:
     '''
     Get the index of the binary bucket by property
     '''
@@ -445,31 +319,14 @@ def get_binary_bucket_index(property: int, binary_bucket_index_map: Dict) -> int
     for bucket_index, property_list in binary_bucket_index_map.items():
         if property in property_list:
             return bucket_index
+        
     raise Exception(f'Property {property} not found in binary_bucket_index_map')
 
 
-def get_power_of_n(value: int, base: int):
-    '''
-    Get the lowest power of a base that's equal or higher than the provided number
-    '''
-
-    if value == 1:
-        return 1
-
-    counter = 0
-    intermediate_product = 1
-    while intermediate_product < value:
-        intermediate_product += base**counter
-        counter += 1
-
-    return counter
-
-
-def get_property_buckets(number_list: List, parameter: str, use_rounding: str = 'full') -> Tuple:
+def get_property_buckets(number_list: list, parameter: str, use_rounding: str = 'full') -> (list[int], dict):
     '''
     Split numbers into buckets, based in the provided parameter
     '''
-
     buckets_list = []
     param_buckets = {}
     for number in number_list:
@@ -496,120 +353,86 @@ def get_property_buckets(number_list: List, parameter: str, use_rounding: str = 
     return buckets_list, param_buckets
 
 
-
-
-def prep_output_folder(folder_name: str):
-    '''
-    Prepare folder for output csv files
-    '''
-
-    if not os.path.exists(folder_name):
-        os.mkdir(folder_name)
-        return
-    else:
-        if cfg.run.reset_output_data:
-            for root, directories, files in os.walk(folder_name):
-                for file in files:
-                    file_path = root + '/' + file
-                    os.remove(file_path)
-        return
-
-
-def get_factors(number_of_colors: int) -> List:
-    '''
-    Compile the factors of a number as a list of strings
-    '''
-
-    factors_list = []
-    for index in range(number_of_colors):
-        factors_list.append(str(index))
-
-    return factors_list
-
-
-def get_colour_bucket_index(binary_buckets: Dict, value: int) -> int:
+def get_colour_bucket_index(binary_buckets: dict, value: int) -> int:
     '''
     Get the index of the binary bucket that a number in
     '''
-
     for index, numbers in binary_buckets.items():
         for number in numbers:
             if value == number.value:
                 return str(index)
 
 
-def generate_timestamp():
-    '''
-    Generate timestamp string, depending on the desired granularity, set in config.toml
-    '''
+def create_hard_copies(data_df, coloring):
+    # [x] 'hard copy'
+    graph_mode_chunk = mappings.graph_mode_filename_chunk[graph_mode]
+    timestamp_format = generate_timestamp(cfg.run.hard_copy_timestamp_granularity)
+    timestamp = datetime.utcnow().strftime(timestamp_format)
+    primes_included = 'primes' if include_primes else 'no_primes'
+    families_string = "All"
+    if len(families_filter) > 0 and len(families_filter) <= 5:
+        families_string = "_".join([str(family) for family in families_filter])
+    elif len(families_filter) > 0:
+        families_string = "__".join([str(families_filter[0]), str(families_filter[-1])])
+    hard_copy_filename = str(lowerbound) + '_' + str(upperbound) + \
+        '_' + graph_mode_chunk + '_' + primes_included + '_' + families_string + '_' + coloring + '_' + timestamp
+    if create_csv:
+        full_hard_copy_filename = hard_copy_filename + '.csv'
+        path = CSV_OUTPUT_FOLDER + '\\'
+        prep_output_folder(CSV_OUTPUT_FOLDER, cfg.run.reset_output_data)
+        data_df.to_csv(path + full_hard_copy_filename)
+        logger.info(f'Data saved as output\full_hard_copy_filename')
 
-    timestamp_format = ''
-    timestamp_granularity = cfg.run.hard_copy_timestamp_granularity
-    format_chunks = ['%d%m%Y', '_%H', '%M', '%S']
-    for chunk_index in range(timestamp_granularity + 1):
-        timestamp_format += format_chunks[chunk_index]
-    return timestamp_format
-
-
-def int_list_to_str(number_list: List[int], separator=', ', use_bookends=True, bookends=['[ ', ' ]']):
-    '''
-    Generate a string from a list of integers
-    '''
-
-    stringified_list = []
-    for number in number_list:
-        stringified_list.append(str(number))
-    list_string = separator.join(stringified_list)
-    if use_bookends:
-        return bookends[0] + list_string + bookends[1]
-    else:
-        return list_string
+    return full_hard_copy_filename
 
 
-def generate_number_list(lowerbound: str = 2, upperbound: str = 10, families_filter: list[int] = []):
-    '''
-    Generate a list of Number objects
-    '''
-
-    families_filter_counter = []
-    filter_families_string = [str(item) for item in families_filter]
-    if len(families_filter) > 0:
-        families_filter_counter = [0 for item in families_filter]
-    number_list = []
-    with Bar('Generating numbers', max=(upperbound - lowerbound + 1)) as bar:
-        for value in range(lowerbound, upperbound + 1):
-            bar.next()
-
-            # exclude primes
-            if not include_primes and pp.isprime(value):
-                continue
-            
-            division_family = 1
-            # exclude number if it fails the families filter
-            if len(families_filter) > 0:
-                calculate_division_family = False
-                division_family = Number.get_division_family(value)
-                if not division_family in families_filter:
-                    continue
-            else:
-                calculate_division_family = True
-
-            number = Number(value=value, division_family=division_family, calculate_division_family=calculate_division_family)
-
-            number_list.append(number)
-            if len(families_filter) > 0:
-                filter_index = families_filter.index(division_family)
-                families_filter_counter[filter_index] += 1
-
-    if len(families_filter) > 0:
-        if families_filter_counter.count(0) == len(families_filter_counter):
-            logger.info(f"None of the generated numbers belong to families [ {', '.join(filter_families_string)} ]")
-        else:
-            for index, item in enumerate(families_filter):
-                logger.info(f"Numbers count in family {item}: {families_filter_counter[index]}")
+def init_log(start: datetime.time):
+    logger.info(f'Start at {start}')
+    logger.info(f'* Range [{lowerbound}..{upperbound}]')
+    families_list_str = [str(family) for family in families_filter]
+    filter_text = ": All" if len(families_filter) == 0 else " [ " + ", ".join(families_list_str) + " ]"
+    logger.info(f'* Families{filter_text}')
+    logger.info(f'* Graph mode: "{graph_mode}"')
+    logger.info(f'* Colorization mode: "{colorization_mode}"')
+    include_primes_message = '* Primes included' if include_primes else '* Primes NOT included'
+    logger.info(include_primes_message)
+    create_csv_message = '* CSV output included' if create_csv else '* No CVS output'
+    logger.info(create_csv_message)
+    palette_name_string = 'Default (Turbo)' if palette_name == 'Default' else palette_name
+    bucket_colorization_message = f'* Bucket colorization enabled: {palette_name_string}' if use_bucket_colorization else '* Monocolor enabled'
+    logger.info(bucket_colorization_message)
 
 
-    return number_list
+def run(lowerbound=2, upperbound=10):
+    # logger dump
+    start = datetime.now()
+    init_log(start)
+
+    # prepate plot data
+    palette = get_palette(palette_name=palette_name)
+
+    number_list = generate_number_list(logger, cfg, lowerbound=lowerbound, upperbound=upperbound, families_filter=families_filter)
+    if len(number_list) == 0:
+        logger.info(f'No composites generated. Terminating the program.')
+        end = datetime.now()
+        logger.info(f'End at {end}')
+        logger.info(f'Total time: {end-start}')
+        quit()
+    logger.info(f'Numbers iterated {lowerbound}..{upperbound}')
+    logger.info(f'Total composites: {len(number_list)}')
+
+    # create plot
+    data_df, coloring = visualize_data(number_list, palette)
+
+    # create_hard_copy
+    hard_copy_filename = create_hard_copies(data_df, coloring)
+
+    end = datetime.now()
+    logger.info(f'End at {end}')
+    logger.info(f'Total time: {end-start}')
+ 
+    stash_graph_html(CSV_OUTPUT_FOLDER, hard_copy_filename)
+    stash_log_file(CSV_OUTPUT_FOLDER, hard_copy_filename)
 
 
 if __name__ == "__main__":

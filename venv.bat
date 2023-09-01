@@ -1,1 +1,0 @@
-d:\Codee\VENV\factorization\Scripts\activate.bat
