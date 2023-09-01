@@ -1,4 +1,4 @@
-from bokeh.plotting import figure, show
+from bokeh.plotting import figure, show, output_file
 from bokeh import models as models
 from bokeh.models import ColumnDataSource, CategoricalColorMapper
 from bokeh.palettes import Turbo, Magma, Inferno, Plasma, Viridis, Cividis, Category10, Dark2, Palette
@@ -104,6 +104,10 @@ class Bokeh_Agent():
         y_axis_label = self.params['y_axis_label']
         width = self.params['width']
         height = self.params['height']
+
+        output_file_path = self.params['output_file_path'] if self.params['output_file_path'] != '' else 'main.html'
+        output_file_title = self.params['output_file_title'] if self.params['output_file_title'] != '' else 'Bokeh Plot'
+        output_file(filename=output_file_path, title=output_file_title)
 
         self.figure = figure(title=title, x_axis_label='number', y_axis_label=y_axis_label, width=width, height=height)
 

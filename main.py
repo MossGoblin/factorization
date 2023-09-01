@@ -24,22 +24,27 @@ from toolbox.utils import (
     split_prime_factors,
 )
 
-logger_name = 'run.log'
-config_name = 'config.toml'
 
-logger = logger_service.get_logger(logger_name)
-cfg = ConfigAgent(config_path=config_name)
+project_title = 'Factorization'
 
+output_file_name = 'main.html'
+output_file_title = project_title
+logger_file_name = 'run.log'
+config_file_name = 'config.toml'
 
+logger = logger_service.get_logger(logger_file_name)
+cfg = ConfigAgent(config_path=config_file_name)
 
 lowerbound = cfg.range.lowerbound
 upperbound = cfg.range.upperbound
 
 # RUN parameters
-use_bucket_colorization = cfg.graph.use_color_buckets
-use_bucket_colorization = cfg.graph.use_color_buckets
 include_primes = cfg.run.include_primes
 create_csv = cfg.run.create_csv
+
+# GRAPH parameters
+use_bucket_colorization = cfg.graph.use_color_buckets
+use_bucket_colorization = cfg.graph.use_color_buckets
 palette_name = cfg.graph.palette
 graph_mode = cfg.graph.visualization_mode
 colorization_mode = cfg.graph.colorization_mode
@@ -55,7 +60,6 @@ except AttributeError:
 
 x_axis = 'number'
 y_axis = mappings.y_axis_values[graph_mode]
-
 palette_color_range = 0
 CSV_OUTPUT_FOLDER = 'output'
 
@@ -131,6 +135,8 @@ def create_graph_params(data_dict: dict, binary_buckets: dict, palette):
     primes_included_text = " Primes included" if include_primes else " Primes excluded."
 
     graph_params = {}
+    graph_params['output_file_path'] = output_file_name
+    graph_params['output_file_title'] = output_file_title
     graph_params['title'] = mappings.graph_title[graph_mode].format(
         data_dict['number'][0], data_dict['number'][-1]) + family_filter_text + primes_included_text
     graph_params['y_axis_label'] = mappings.y_axis_label[graph_mode]

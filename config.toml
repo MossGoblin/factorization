@@ -2,7 +2,7 @@
 # .. primes are automatically excluded from the graph by default
 [range]
 lowerbound = 2
-upperbound = 10000
+upperbound = 100
 
 # parameters of the current run
 [run]
