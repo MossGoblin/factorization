@@ -2,7 +2,7 @@
 # .. primes are automatically excluded from the graph by default
 [range]
 lowerbound = 2
-upperbound = 100
+upperbound = 1000
 
 # parameters of the current run
 [run]
@@ -46,7 +46,7 @@ visualization_mode = 'mean_deviation'
 # property to be used for bucket colorization
 # options: mean_deviation, antislope, division_family, default
 # default uses the value of visualization_mode
-colorization_mode = 'mean_deviation'
+colorization_mode = 'division_family'
 # use rounding of property used for bucket assignment
 # options: full, up, down
 property_rounding = 'full'

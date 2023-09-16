@@ -64,7 +64,7 @@ palette_color_range = 0
 CSV_OUTPUT_FOLDER = 'output'
 
 
-def collate_date(number_list: list[Number], palette):
+def collate_data(number_list: list[Number], palette):
     if use_bucket_colorization:
         # [x] separate numbers into binary buckets by closest integer to a given property
         # [x] get primary slope buckets
@@ -210,7 +210,7 @@ def visualize_data(number_list: list[Number], palette):
     plot = Bokeh_Agent()
 
     # data
-    binary_buckets, data_dict = collate_date(number_list, palette)
+    binary_buckets, data_dict = collate_data(number_list, palette)
     data_df = pd.DataFrame(data_dict)
     data_df.reset_index()
     plot.set_data(data_df)

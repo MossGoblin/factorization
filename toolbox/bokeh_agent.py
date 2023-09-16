@@ -111,7 +111,4 @@ class Bokeh_Agent():
 
         self.figure = figure(title=title, x_axis_label='number', y_axis_label=y_axis_label, width=width, height=height)
 
-        hover = models.HoverTool(tooltips=self.tooltips)
-        self.figure.add_tools(hover)
-
         self.create_graph()
