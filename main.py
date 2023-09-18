@@ -5,11 +5,11 @@ from datetime import datetime
 
 import pandas as pd
 from progress.bar import Bar
-from bokeh_agent.scatter_agent import BokehScatterAgent
+from pytoolbox.bokeh_agent import BokehScatterAgent
+from pytoolbox.config_agent import ConfigAgent
 
 import toolbox.logger_service as logger_service
 import toolbox.mappings as mappings
-from toolbox.config_agent import ConfigAgent
 from toolbox.number import Number
 from toolbox.utils import (
     generate_number_list,
@@ -23,7 +23,6 @@ from toolbox.utils import (
     prep_output_folder,
     split_prime_factors,
 )
-
 
 project_title = 'Factorization'
 

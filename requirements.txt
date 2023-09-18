@@ -1,4 +1,4 @@
-bokeh-agent @ git+https://github.com/MossGoblin/bokeh_agent.git
+pytoolbox @ git+https://github.com/MossGoblin/pytoolbox.git
 contourpy==1.1.0
 greenlet==2.0.2
 Jinja2==3.1.2
