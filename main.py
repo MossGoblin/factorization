@@ -5,10 +5,10 @@ from datetime import datetime
 
 import pandas as pd
 from progress.bar import Bar
+from bokeh_agent.scatter_agent import BokehScatterAgent
 
 import toolbox.logger_service as logger_service
 import toolbox.mappings as mappings
-from toolbox.bokeh_agent import Bokeh_Agent
 from toolbox.config_agent import ConfigAgent
 from toolbox.number import Number
 from toolbox.utils import (
@@ -207,7 +207,7 @@ def visualize_data(number_list: list[Number], palette):
     '''
     
     # plot
-    plot = Bokeh_Agent()
+    plot = BokehScatterAgent()
 
     # data
     binary_buckets, data_dict = collate_data(number_list, palette)
@@ -236,7 +236,7 @@ def visualize_data(number_list: list[Number], palette):
     logger.info('Graph generated')
 
     # [x] show
-    plot.display_graph()
+    plot.display_plot()
 
     return data_df, coloring
 
