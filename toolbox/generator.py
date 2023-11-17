@@ -3,9 +3,8 @@ import multiprocessing
 from multiprocessing import Process, Queue
 import math
 import pyprimes as pp
-import toolbox.logger_agent as logger_agent
+from datetime import datetime
 
-from progress.bar import Bar
 
 class Decomposer(Process):
     def __init__(self, queue, value_list):
@@ -53,6 +52,8 @@ class Decomposer(Process):
         self.queue.put(updated_collection)
 
 def decompose(logger, values_list):
+    logger.info('Decomposing')
+    step_start = datetime.utcnow()
     decomposers = []
     composites_queue = Queue()
     cpu_count = multiprocessing.cpu_count()
@@ -77,6 +78,8 @@ def decompose(logger, values_list):
         result = composites_queue.get()
         composites_collection.extend(result)
         decomposer_process_count -= 1
+    step_end = datetime.utcnow()
+    logger.debug(f'...done in {step_end-step_start}')
 
     collection_df = pd.DataFrame.from_dict(composites_collection)
     return collection_df

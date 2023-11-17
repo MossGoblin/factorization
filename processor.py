@@ -80,13 +80,16 @@ class Processor():
         self.logger.info('==============')
 
     def generate_number_list(self):
-        self.logger.info('Generating numbers')
+        self.logger.info('Generating values')
+        step_start = datetime.utcnow()
         if self.cfg.set.mode == 'family':
             self.logger.debug('Processing families')
             number_list = self.generate_number_families()
         elif self.cfg.set.mode == 'range':
             self.logger.debug('Processing range')
             number_list = self.generate_continuous_number_list()
+        step_end = datetime.utcnow()
+        self.logger.debug(f'...done in {step_end-step_start}')
         return number_list
 
     def generate_continuous_number_list(self):
@@ -161,8 +164,12 @@ class Processor():
             # HERE
             # create dataframe
             collection_df = decompose(self.logger, number_list)
-            
+            self.logger.info('Saving data')
+            step_start = datetime.utcnow()
             self.data_manager.save_data(collection_df)
+            step_end = datetime.utcnow()
+            self.logger.debug(f'...done in {step_end-step_start}')
+
 
         end = datetime.utcnow()
         self.logger.info(f'End at {end}')
