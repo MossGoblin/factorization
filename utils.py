@@ -1,11 +1,7 @@
-from configparser import ConfigParser
-from pytoolbox.config_agent import ConfigAgent
-import json
 import math
 from typing import List
 import pyprimes as pp
 import numpy as np
-import re
 
 
 class Number():
@@ -95,8 +91,6 @@ class ToolBox():
             # order family
             family = sorted(family)
             family_product = np.prod(family)
-            # identity_factors = []
-            # HERE
             if self.cfg.set.identity_factor_mode == 'count':
                 if self.cfg.set.identity_factor_minimum_mode == 'family':
                     largest_family_factor = family[-1]
@@ -111,7 +105,6 @@ class ToolBox():
                 first_identity_factor = self.cfg.set.identity_factor_range_min
                 number_of_composites = pp.prime_count(self.cfg.set.identity_factor_range_max) - pp.prime_count(self.cfg.set.identity_factor_range_min)
             # iterate identity factors
-            # identity_factors.append(first_identity_factor)
             processed_numbers.append(family_product * first_identity_factor)
             prime_generator = pp.primes_above(first_identity_factor)
             for count in range(number_of_composites):
