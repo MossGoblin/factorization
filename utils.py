@@ -59,17 +59,17 @@ class Number():
 
 
 class ToolBox():
-    def __init__(self, logger, options) -> None:
+    def __init__(self, logger, config) -> None:
         self.logger = logger
-        self.opt = options
+        self.cfg = config
 
 
     def generate_number_list(self):
         self.logger.info('Generating numbers')
-        if self.opt.set_mode == 'family':
+        if self.cfg.set.mode == 'family':
             self.logger.debug('Processing families')
             number_list = self.generate_number_families()
-        elif self.opt.set_mode == 'range':
+        elif self.cfg.set.mode == 'range':
             self.logger.debug('Processing range')
             number_list = self.generate_continuous_number_list()
         else:
@@ -78,38 +78,38 @@ class ToolBox():
         return number_list
 
     def generate_continuous_number_list(self):
-        lowerbound = self.opt.set_range_min
-        upperbound = self.opt.set_range_max
+        lowerbound = self.cfg.set.range_min
+        upperbound = self.cfg.set.range_max
         if lowerbound < 2:
             lowerbound = 2
         number_list = []
         for value in range(lowerbound, upperbound + 1):
-            if pp.isprime(value) and not self.opt.set_include_primes:
+            if pp.isprime(value) and not self.cfg.set.include_primes:
                 continue
             number_list.append(value)
         return number_list
 
     def generate_number_families(self):
         processed_numbers = []
-        for family in self.opt.set_families:
+        for family in self.cfg.set.families:
             # order family
             family = sorted(family)
             family_product = np.prod(family)
             # identity_factors = []
             # HERE
-            if self.opt.set_identity_factor_mode == 'count':
-                if self.opt.set_identity_factor_minimum_mode == 'family':
+            if self.cfg.set.identity_factor_mode == 'count':
+                if self.cfg.set.identity_factor_minimum_mode == 'family':
                     largest_family_factor = family[-1]
                     larger_primes = pp.primes_above(largest_family_factor)
                     first_identity_factor = next(larger_primes)
-                elif self.opt.set_identity_factor_minimum_mode == 'origin':
+                elif self.cfg.set.identity_factor_minimum_mode == 'origin':
                     first_identity_factor = 2
                 else:
-                    first_identity_factor = self.opt.set_identity_factor_minimum_value
-                number_of_composites = self.opt.set_identity_factor_count
+                    first_identity_factor = self.cfg.set.identity_factor_minimum_value
+                number_of_composites = self.cfg.set.identity_factor_count
             else:
-                first_identity_factor = self.opt.set_identity_factor_range_min
-                number_of_composites = pp.prime_count(self.opt.set_identity_factor_range_max) - pp.prime_count(self.opt.set_identity_factor_range_min)
+                first_identity_factor = self.cfg.set.identity_factor_range_min
+                number_of_composites = pp.prime_count(self.cfg.set.identity_factor_range_max) - pp.prime_count(self.cfg.set.identity_factor_range_min)
             # iterate identity factors
             # identity_factors.append(first_identity_factor)
             processed_numbers.append(family_product * first_identity_factor)
@@ -125,97 +125,3 @@ class ToolBox():
         for count in range(total_count):
             primes.append(next(prime_generator))
         return primes
-
-class Options(object):
-    def __init__(self):
-        pass
-
-    def __setattr__(self, key, value):
-        self.__dict__[key] = value
-    
-    def set(self, key, value):
-        self.__dict__[key] = value
-
-class SettingsParser():
-    def __init__(self, config_file='config.ini') -> None:
-        self.config_file = config_file
-        self.config = ConfigParser()
-        # DBG START
-        self.logger_mode = None
-        self.logger_file_name_string = None
-        self.logger_base_folder = None
-        self.logger_reset_files = None
-        self.logger_format = None
-        self.logger_level = None
-        self.set_mode = None
-        self.set_families = None
-        self.set_identity_factor_mode = None
-        self.set_identity_factor_range_min = None
-        self.set_identity_factor_range_max = None
-        self.set_identity_factor_minimum_mode = None
-        self.set_identity_factor_minimum_value = None
-        self.set_identity_factor_count = None
-        self.set_include_primes = None
-        self.set_range_min = None
-        self.set_range_max = None
-        self.set_csv_file_name = None
-        self.graph_width = None
-        self.graph_height = None
-        self.graph_point_size = None
-        self.graph_mode = None
-        self.graph_use_color_buckets = None
-        self.graph_palette = None
-        self.run_create_csv = None
-        self.run_hard_copy_timestamp_granularity = None
-        self.run_reset_output_data = None
-        # DBG END
-        self._read_settings(self.config_file)
-
-    def _set(self, key, value):
-        self.__dict__[key] = value
-
-    def _read_settings(self, config_file='config.ini'):
-        if not config_file:
-            config_file = self.config_file
-        # self.config.read(self.config_file)
-        try:
-            with open(config_file) as f:
-                self.config.read_file(f)
-        except IOError as e:
-            print(e)
-            raise IOError
-        for section in self.config.sections():
-            section_name = f'{section}_'
-            for option in self.config.options(section):
-                option_name = section_name + option
-                self._set(option_name, self.parse(section, option))
-
-    def get_settings(self):
-        return self
-
-    def parse(self, section: str, parameter: str):
-        # parse the settings according to their type
-        string_value = self.config.get(section, parameter)
-
-        # try float
-        float_string = re.search(r'^[0-9]+\.[0-9]+$', string_value)
-        if float_string:
-            return float(float_string[0])
-
-        # try int
-        int_string = re.search(r'^[0-9]+$', string_value)
-        if int_string:
-            return int(int_string[0])
-
-        # try bool
-        bool_string = re.search(r'^(true|false)$', string_value)
-        if bool_string:
-            return True if bool_string[0] == 'true' else False
-
-        # try int array
-        array_string = re.search(r'^(\[|\]|\d|,|\s)+$', string_value)
-        if array_string:
-            return json.loads(array_string[0])
-
-        # return string for all other cases
-        return string_value

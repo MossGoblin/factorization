@@ -1,30 +1,30 @@
 from datetime import datetime
 import logging
+import toolbox.logger_agent as logger_agent
 import os
-from utils import SettingsParser, ToolBox
+from utils import ToolBox
+from pytoolbox.config_agent import ConfigAgent
 
 
 class Processor():
 
-    def __init__(self, config_file='config.ini') -> None:
-        here = os.path.dirname(os.path.abspath(__file__))
-        config_filename = os.path.join(here, config_file)
-        self.opt = SettingsParser(config_file=config_filename).get_settings()
-        self.logger = self.set_up_logger()
+    def __init__(self, logger, config) -> None:
+        self.cfg = config
+        self.logger = logger
 
     def set_up_logger(self):
         # create logger
         logger = logging.getLogger(__name__)
-        log_level = self.opt.logger_level
+        log_level = self.cfg.logger.level
         logger.setLevel(log_level)
         # create formatter and set level
-        formatter = logging.Formatter(self.opt.logger_format)
+        formatter = logging.Formatter(self.cfg.logger.format)
 
-        reset_log_folder = self.opt.logger_reset_files
-        log_folder = self.opt.logger_base_folder
+        reset_log_folder = self.cfg.logger.reset_files
+        log_folder = self.cfg.logger.base_folder
         self.prep_folder(log_folder, reset_log_folder)
 
-        logger_mode = self.opt.logger_mode
+        logger_mode = self.cfg.logger.mode
         if logger_mode == 'console' or logger_mode == 'full':
             # create console handler
             handler = logging.StreamHandler()
@@ -35,7 +35,7 @@ class Processor():
 
         if logger_mode == 'file' or logger_mode == 'full':
             # create file handler
-            log_file_name = self.opt.logger_file_name_string
+            log_file_name = self.cfg.logger.file_name_string
             if not log_folder == 'none':
                 log_file_name = log_folder + "/" + log_file_name
             handler = logging.FileHandler(
@@ -69,47 +69,47 @@ class Processor():
         '''
         self.logger.info('== SETTINGS ==')
         self.logger.info('NUMBER SET')
-        self.logger.info(f'number generation mode: {self.opt.set_mode}')
-        if self.opt.set_mode == 'family':
-            self.logger.debug(f'families: {self.opt.set_families}')
+        self.logger.info(f'number generation mode: {self.cfg.set.mode}')
+        if self.cfg.set.mode == 'family':
+            self.logger.debug(f'families: {self.cfg.set.families}')
             self.logger.debug(
-                f'identity factor mode: {self.opt.set_identity_factor_mode}')
-            if self.opt.set_identity_factor_mode == 'range':
+                f'identity factor mode: {self.cfg.set.identity_factor_mode}')
+            if self.cfg.set.identity_factor_mode == 'range':
                 self.logger.debug(
-                    f'identity factor range: {self.opt.set_identity_factor_range_min}..{self.opt.set_identity_factor_range_max}')
+                    f'identity factor range: {self.cfg.set.identity_factor_range_min}..{self.cfg.set.identity_factor_range_max}')
             else:
-                if self.opt.set_identity_factor_minimum_mode == 'value':
-                    ifm = f'value ({self.opt.set_identity_factor_minimum_value})'
+                if self.cfg.set.identity_factor_minimum_mode == 'value':
+                    ifm = f'value ({self.cfg.set.identity_factor_minimum_value})'
                 else:
-                    ifm = self.opt.set_identity_factor_minimum_mode
+                    ifm = self.cfg.set.identity_factor_minimum_mode
 
                 self.logger.debug(f'identity factor minimum: {ifm}')
 
-        elif self.opt.set_mode == 'range':
+        elif self.cfg.set.mode == 'range':
             self.logger.debug(
-                f'range [{self.opt.set_range_min}..{self.opt.set_range_max}]')
+                f'range [{self.cfg.set.range_min}..{self.cfg.set.range_max}]')
             self.logger.debug(
-                f'primes: {"included" if self.opt.set_include_primes else "excluded"}]')
+                f'primes: {"included" if self.cfg.set.include_primes else "excluded"}]')
 
         self.logger.info('GRAPH')
         self.logger.info(
-            f'graph size: {self.opt.graph_width}/{self.opt.graph_height} x {self.opt.graph_point_size}pt')
-        self.logger.info(f'Y-axis: {self.opt.graph_mode}')
-        self.logger.debug(f'Colorization: {self.opt.graph_use_color_buckets}')
+            f'graph size: {self.cfg.graph.width}/{self.cfg.graph.height} x {self.cfg.graph.point_size}pt')
+        self.logger.info(f'Y-axis: {self.cfg.graph.mode}')
+        self.logger.debug(f'Colorization: {self.cfg.graph.use_color_buckets}')
 
         self.logger.info('RUN')
-        self.logger.info(f'csv output: {self.opt.run_create_csv}')
-        if self.opt.run_hard_copy_timestamp_granularity == 0:
+        self.logger.info(f'csv output: {self.cfg.run.create_csv}')
+        if self.cfg.run.hard_copy_timestamp_granularity == 0:
             timestamp_format = 'days'
-        elif self.opt.run_hard_copy_timestamp_granularity == 1:
+        elif self.cfg.run.hard_copy_timestamp_granularity == 1:
             timestamp_format = 'hours'
-        elif self.opt.run_hard_copy_timestamp_granularity == 2:
+        elif self.cfg.run.hard_copy_timestamp_granularity == 2:
             timestamp_format = 'minutes'
         else:
             timestamp_format = 'full'
         self.logger.debug(f'timestamp granularity: {timestamp_format}')
         self.logger.debug(
-            f'output folder reset: {self.opt.run_reset_output_data}')
+            f'output folder reset: {self.cfg.run.reset_output_data}')
 
         self.logger.info('==============')
 
@@ -118,7 +118,7 @@ class Processor():
         self.logger.info(f'Start at {start}')
         self.log_settings()
         # HERE
-        tb = ToolBox(self.logger, self.opt)
+        tb = ToolBox(self.logger, self.cfg)
         number_list = tb.generate_number_list()
         end = datetime.utcnow()
         self.logger.info(f'End at {end}')
