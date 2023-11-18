@@ -1,10 +1,13 @@
-from datetime import datetime
 import os
-import pyprimes as pp
+import shutil
+import sys
+from datetime import datetime
+
 import numpy as np
+import pyprimes as pp
+
 from toolbox import STASH_FOLDER
 from toolbox.generator import decompose
-import shutil
 
 
 class Processor():
@@ -162,7 +165,19 @@ class Processor():
         if mode == 'generate':
             number_list = self.generate_number_list()
             # HERE
-            # create dataframe
+            # TODO Check for existing data
+            # ask config first if needed?
+            # may be a separate table is needed, with only values for faster loading
+            if self.cfg.mode.check_data:
+                existing_data = self.data_manager.load_value_data(number_list)
+                if len(existing_data) == len(number_list):
+                    self.logger.info(f'Data is already in the db')
+                    end = datetime.utcnow()
+                    self.logger.info(f'End at {end}')
+                    self.logger.info(f'Total time: {end-self.cfg.local.start}')
+                    sys.exit(0)
+                else:
+                    number_list = [value for value in number_list if value not in existing_data['value'].tolist()]
             collection_df = decompose(self.logger, number_list)
             self.logger.info('Saving data')
             step_start = datetime.utcnow()

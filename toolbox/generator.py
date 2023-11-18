@@ -1,9 +1,10 @@
-import pandas as pd
-import multiprocessing
-from multiprocessing import Process, Queue
 import math
-import pyprimes as pp
+import multiprocessing
 from datetime import datetime
+from multiprocessing import Process, Queue
+
+import pandas as pd
+import pyprimes as pp
 
 
 class Decomposer(Process):

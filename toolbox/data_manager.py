@@ -1,9 +1,7 @@
-from sqlalchemy import create_engine, Column, Integer, Boolean, Float, String
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.orm import declarative_base
-from progress.bar import Bar
-
 import pandas as pd
+from progress.bar import Bar
+from sqlalchemy import Boolean, Column, Float, Integer, String, create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 Base = declarative_base()
 
@@ -28,6 +26,13 @@ alternative filtering at
 # LINK https://www.peterspython.com/en/blog/slqalchemy-dynamic-query-building-and-filtering-including-soft-deletes
 '''
 
+class Value(Base):
+    __tablename__ = "values"
+    value = Column("value", Integer, primary_key=True)
+
+    def __init__(self, number_value):
+        self.value = number_value
+    
 
 class Composite(Base):
     __tablename__ = "composites"
@@ -89,6 +94,8 @@ class DataManager():
             for record in data_list:
                 new_number = Composite(record)
                 session.merge(new_number)
+                new_value = Value(record['value'])
+                session.merge(new_value)
                 bar.next()        
         session.commit()
         
@@ -96,6 +103,12 @@ class DataManager():
     def load_data(self, value_list):
         '''Loads data, clamped with lowerbound and upperbound'''
         raw_df = pd.read_sql(self.session.query(Composite).filter(Composite.value.in_(value_list)).statement, self.session.bind)
+        return raw_df
+
+
+    def load_value_data(self, value_list):
+        '''Loads data, clamped with lowerbound and upperbound'''
+        raw_df = pd.read_sql(self.session.query(Value).filter(Value.value.in_(value_list)).statement, self.session.bind)
         return raw_df
 
 

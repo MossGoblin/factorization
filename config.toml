@@ -3,26 +3,10 @@
     # generate - generate new data file
     # plot - plot the data from a data fie
 mode = 'generate'
+check_data = true
 
 # LOGGER SETTINGS
 [logger]
-# logging mode
-# options: file, console, full (full = console & file)
-mode = 'full'
-
-# # pattern for the name of the log file
-# # log_file_name_string = {mode}_{set_profile}_{timeframe}.ini
-# file_name_string = 'log.ini'
-
-# # base folder for log files (none for root folder)
-# base_folder = 'logging'
-
-# # if true, all previous .log files are removed in each run
-# reset_files = 'true'
-
-# # logger formatting
-# format = '%%(asctime)s - %%(name)s - [%%(levelname)-5s] %%(message)s'
-
 # level: the level of details to be included in the log
     # ERROR, INFO, DEBUG
 level = 'DEBUG'
@@ -73,7 +57,7 @@ include_primes = false
 
 # range minimum and maximum: first and last numbers to be included in the range
 range_min = 2
-range_max = 1000000
+range_max = 110
 
 
 # GRAPH PARAMETERS
