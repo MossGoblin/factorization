@@ -1,12 +1,18 @@
 import os
 import shutil
-import sys
 from datetime import datetime
+from logging import Logger
 
 import numpy as np
+import math
+import pandas as pd
 import pyprimes as pp
+from progress.bar import Bar
+from pytoolbox.config_agent import ConfigAgent
 
+import toolbox.mappings as mappings
 from toolbox import STASH_FOLDER
+from toolbox.data_manager import DataManager
 from toolbox.generator import decompose
 
 
@@ -31,6 +37,7 @@ class Processor():
                         file_path = root + '/' + file
                         os.remove(file_path)
             return
+
 
     def log_settings(self):
         '''
@@ -81,6 +88,23 @@ class Processor():
             f'output folder reset: {self.cfg.run.reset_output_data}')
 
         self.logger.info('==============')
+
+
+
+
+    def get_data(self, logger: Logger, config: ConfigAgent, data_manager: DataManager) -> pd.DataFrame:
+        logger.debug('Loading data from file')
+        value_list = self.generate_number_list()
+        data_df = data_manager.load_data(value_list)
+        # TODO do we need filters before plotting ?
+        # if config.filters.filter_data:
+        #      logger.info(f'Filtering data: {config.filters.filter_name}')
+        #      data_df = filter_data(config, data_df)
+        #      config.add_parameter('local', 'filter_name', config.filters.filter_name)
+
+        return data_df
+
+
 
     def generate_number_list(self):
         self.logger.info('Generating values')
@@ -151,40 +175,121 @@ class Processor():
         open(logger_filepath, 'w').close()
 
 
-    # def get_primes_between(self, previous: int, total_count: int):
-    #     primes = []
-    #     prime_generator = pp.primes_above(previous)
-    #     for count in range(total_count):
-    #         primes.append(next(prime_generator))
-    #     return primes
+    def generate(self):
+        number_list = self.generate_number_list()
+        # filter existing data
+        terminate = False
+        try:
+            starting_value_count = len(number_list)
+            existing_data = self.data_manager.load_value_data(number_list)
+            if len(existing_data) == len(number_list):
+                self.logger.info('Data is already in the db')
+                end = datetime.utcnow()
+                self.logger.info(f'End at {end}')
+                self.logger.info(f'Total time: {end-self.cfg.local.start}')
+                terminate = True
+            else:
+                number_list = [value for value in number_list if value not in existing_data['value'].tolist()]
+                if starting_value_count > len(number_list):
+                    self.logger.debug(f'Some records found in the db; proceeding with {len(number_list)} values')
+                else:
+                    self.logger.debug('All values are new; proceeding with values')
+        except Exception as e:
+            self.logger.debug(f'Could not load existing data records : {e}')
+            self.logger.debug('Proceeding with all values')
+        if terminate:
+            exit()
+        collection_df = decompose(self.logger, number_list)
+        self.logger.info('Saving data')
+        step_start = datetime.utcnow()
+        self.data_manager.save_data(collection_df)
+        step_end = datetime.utcnow()
+        self.logger.debug(f'...done in {step_end-step_start}')
+
+
+    def parse_factors(self, factors_string: str) -> list[int]:
+        factors_str_list = factors_string.split(sep=",")
+        factors_int_list = [int(value) for value in factors_str_list]
+
+        return factors_int_list
+
+
+    def get_colour_bucket_index(self, value: int, max: int, palette_range: int) -> int:
+        color_index = str(math.floor((palette_range * value) / max))
+
+        return color_index
+
+
+    def collection_to_df(self, data: pd.DataFrame, palette_range: int, colorization_field: str) -> pd.DataFrame:
+        # add coloration index column
+        rawdict = data.to_dict(orient='records')
+        data_dict = {}
+        data_dict['value'] = []
+        data_dict['is_prime'] = []
+        data_dict['prime_factors'] = []
+        data_dict['small_factors'] = []
+        data_dict['largest_factor'] = []
+        data_dict['division_family'] = []
+        data_dict['ideal_factor'] = []
+        data_dict['mean_deviation'] = []
+        data_dict['anti_slope'] = []
+        data_dict['color_bucket'] = []
+
+
+        max_value = (data[colorization_field].max())
+        # check for values
+        if max_value == 0:
+            return None
+
+        with Bar('Generating plot data', max=len(rawdict)) as bar:
+            for item in rawdict:
+                data_dict['value'].append(item['value'])
+                data_dict['is_prime'].append('True' if item['is_prime'] else 'False')
+                prime_factors = self.parse_factors(item['prime_factors'])
+                data_dict['prime_factors'].append(prime_factors)
+                family_factors = prime_factors[:-1]
+                data_dict['small_factors'].append(family_factors)
+                data_dict['largest_factor'].append(prime_factors[-1])
+                # TODO see if division family is to be moved to the data
+                data_dict['division_family'].append(math.prod(family_factors))
+                data_dict['ideal_factor'].append(item['ideal_factor'])
+                data_dict['mean_deviation'].append(item['mean_deviation'])
+                data_dict['anti_slope'].append(item['anti_slope'])
+
+
+                data_dict['color_bucket'].append(self.get_colour_bucket_index(item[colorization_field], max_value, palette_range))
+                bar.next()
+
+        data_df = pd.DataFrame(data_dict)
+
+        return data_df        
+
+
+    def prepare_data(self, config: ConfigAgent, data: pd.DataFrame) -> pd.DataFrame:
+        # enchancing data
+        palette_range = config.graph.palette_range
+        colorization_field_config = config.graph.colorization_value
+        colorization_field = mappings.colorization_field[colorization_field_config]    
+        data_df = self.collection_to_df(data=data, palette_range=palette_range, colorization_field=colorization_field)
+
+        return data_df
+
+    def plot(self):
+        data = self.get_data(self.logger, self.cfg, self.data_manager)
+
+        # prepare data for plot
+        self.logger.info('Preparing data')
+        data = self.prepare_data(self.cfg, data)
+
 
     def run(self):
         self.logger.info(f'Start at {self.cfg.local.start}')
         self.log_settings()
         mode = self.cfg.mode.mode
         if mode == 'generate':
-            number_list = self.generate_number_list()
-            # HERE
-            # TODO Check for existing data
-            # ask config first if needed?
-            # may be a separate table is needed, with only values for faster loading
-            if self.cfg.mode.check_data:
-                existing_data = self.data_manager.load_value_data(number_list)
-                if len(existing_data) == len(number_list):
-                    self.logger.info(f'Data is already in the db')
-                    end = datetime.utcnow()
-                    self.logger.info(f'End at {end}')
-                    self.logger.info(f'Total time: {end-self.cfg.local.start}')
-                    sys.exit(0)
-                else:
-                    number_list = [value for value in number_list if value not in existing_data['value'].tolist()]
-            collection_df = decompose(self.logger, number_list)
-            self.logger.info('Saving data')
-            step_start = datetime.utcnow()
-            self.data_manager.save_data(collection_df)
-            step_end = datetime.utcnow()
-            self.logger.debug(f'...done in {step_end-step_start}')
-
+            self.generate()
+        else:
+            self.plot()
 
         end = datetime.utcnow()
         self.logger.info(f'End at {end}')

@@ -90,15 +90,31 @@ class DataManager():
         Session = sessionmaker(bind=self.engine)
         session = Session()
         data_list = data.to_dict(orient="records")
+
+        # Bulk insert version
         with Bar('Adding records to db', max=len(data_list)) as bar:
+            numbers = []
+            values = []
             for record in data_list:
                 new_number = Composite(record)
-                session.merge(new_number)
+                numbers.append(new_number)
                 new_value = Value(record['value'])
-                session.merge(new_value)
-                bar.next()        
+                values.append(new_value)
+                bar.next()
+        session.add_all(numbers)
+        session.add_all(values)
         session.commit()
-        
+
+        # Record by record version
+        # with Bar('Adding records to db', max=len(data_list)) as bar:
+        #     for record in data_list:
+        #         new_number = Composite(record)
+        #         session.merge(new_number)
+        #         new_value = Value(record['value'])
+        #         session.merge(new_value)
+        #         bar.next()
+        # session.commit()
+
 
     def load_data(self, value_list):
         '''Loads data, clamped with lowerbound and upperbound'''

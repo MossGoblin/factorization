@@ -2,8 +2,7 @@
 # mode: generate new data file or plot data from an existing data file
     # generate - generate new data file
     # plot - plot the data from a data fie
-mode = 'generate'
-check_data = true
+mode = 'plot'
 
 # LOGGER SETTINGS
 [logger]
@@ -57,7 +56,7 @@ include_primes = false
 
 # range minimum and maximum: first and last numbers to be included in the range
 range_min = 2
-range_max = 110
+range_max = 1000
 
 
 # GRAPH PARAMETERS
@@ -79,6 +78,19 @@ use_color_buckets = true
 # Default = Turbo
 # preview: https://docs.bokeh.org/en/latest/docs/reference/palettes.html
 palette = 'Default'
+
+# palette_range: maximum number of colors to be used
+    # limited by the palette
+    # https://docs.bokeh.org/en/latest/docs/reference/palettes.html
+palette_range = 11
+
+# colorization_value: number attribute to be used for colorization
+    # value
+    # ideal factor
+    # mean deviation
+    # alti slope
+    # division family - not yet
+colorization_value = 'mean deviation'
 
 
 # RUN PARAMETERS
