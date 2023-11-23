@@ -16,6 +16,18 @@ from toolbox import STASH_FOLDER
 from toolbox.data_manager import DataManager
 from toolbox.generator import decompose
 
+import collections
+from bokeh.palettes import (
+    Category10,
+    Cividis,
+    Dark2,
+    Inferno,
+    Magma,
+    Plasma,
+    Turbo,
+    Viridis,
+)
+
 
 class Processor():
     def __init__(self, logger, config, data_manager) -> None:
@@ -279,11 +291,178 @@ class Processor():
         return factors_int_list
 
 
-    def get_colour_bucket_index(self, value: int, max: int, palette_range: int) -> int:
-        color_index = str(math.floor((palette_range * value) / max))
+    def get_colour_bucket_index(self, binary_buckets: dict, value: int) -> int:
+        '''
+        Get the index of the binary bucket that a number in
+        '''
+        for index, numbers in binary_buckets.items():
+            for number in numbers:
+                if value == number.value:
+                    return str(index)
 
-        return color_index
 
+    def get_property_buckets(self, data: pd.DataFrame, parameter: str, use_rounding: str = 'full') -> (list[int], dict):
+        '''
+        Split numbers into buckets, based in the provided parameter
+        '''
+        buckets_list = []
+        param_buckets = {}
+        for index, number in data.iterrows():
+            if number['is_prime'] and not self.cfg.set.include_primes:
+                continue
+            else:
+                try:
+                    property = number[parameter]
+                except:
+                    raise Exception
+
+                if use_rounding == 'full':
+                    property = round(property)
+                elif use_rounding == 'down':
+                    property = math.floor(property)
+                elif use_rounding == 'up':
+                    property = math.ceil(property)
+
+                if property not in buckets_list:
+                    buckets_list.append(property)
+                    param_buckets[property] = []
+                param_buckets[property].append(number)
+
+        return buckets_list, param_buckets
+
+
+    def get_max_sum(self, limit: int, base: int):
+        '''
+        Get the sum of the first 'power' powers of 'base'
+        '''
+
+        counter = 0
+        sum = 0
+        while counter < limit:
+            sum += base**counter
+            counter += 1
+
+        return sum
+
+
+    def get_bucket_base(self, limit: int, volume: int):
+        '''
+        Calculate the base that offers bucket coverage for a maximum number of powers
+        '''
+
+        base = 1
+        max_sum = 0
+        while max_sum < volume:
+            base += 1
+            max_sum = self.get_max_sum(limit, base)
+
+        return base
+
+
+    def get_number_of_colors_in_palette(self, palette: dict):
+        '''
+        Get the maximum number of colors, supported by the palette
+        '''
+        count = sorted(palette.keys())[-1]
+        return count
+
+
+    def get_power_of_n(self, value: int, base: int):
+        '''
+        Get the lowest power of a base that's equal or higher than the provided number
+        '''
+
+        if value == 1:
+            return 1
+
+        counter = 0
+        intermediate_product = 1
+        while intermediate_product < value:
+            intermediate_product += base**counter
+            counter += 1
+
+        return counter
+
+
+    def filter_property_buckets(self, sorted_property_buckets: dict, cut_off_value: int):
+        trimmed_property_buckets = {}
+        for index, item in sorted_property_buckets.items():
+            trimmed_property_buckets[index] = item
+
+        filtered_property_buckets = []
+        counter = 1
+        while counter <= cut_off_value and len(trimmed_property_buckets) > 0:
+            item = next(iter(trimmed_property_buckets.items()))
+            filtered_property_buckets.extend(item[1])
+            trimmed_property_buckets.pop(item[0])
+            counter += 1
+
+        return filtered_property_buckets, trimmed_property_buckets
+
+
+    def get_buckets(self, sorted_buckets_list: list, sorted_property_buckets: dict, palette) -> dict:
+        '''
+        Split numbers into buckets by a given property
+
+        The first bucket contains numbers with one property value
+        The next bucket contains X times more property values than the previous one
+        X is determined so that the palette can cover all property values
+        '''
+
+        global palette_color_range
+
+        number_of_unassigned_buckets = len(sorted_buckets_list)
+        palette_color_range = self.get_number_of_colors_in_palette(palette=palette)
+        bucket_base = self.get_bucket_base(palette_color_range, number_of_unassigned_buckets)
+        self.logger.info(f'Buckets to be distributed: {number_of_unassigned_buckets}')
+        self.logger.info(f'Base chosen: {bucket_base}')
+        number_of_binary_buckets = self.get_power_of_n(number_of_unassigned_buckets, base=bucket_base)
+
+        # create binary bucket index map
+        binary_bucket_index_map = {}
+        binary_buckets = {}
+
+        for counter in range(number_of_binary_buckets + 1):
+            bucket_count = pow(bucket_base, counter)
+            binary_bucket_index = counter
+            binary_buckets[binary_bucket_index] = []
+            filtered_property_bucket, sorted_property_buckets = self.filter_property_buckets(sorted_property_buckets, bucket_count)
+            if len(filtered_property_bucket) > 0:
+                binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
+                binary_bucket_index_map[binary_bucket_index] = []
+                binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
+                sorted_buckets_list = sorted_buckets_list[bucket_count:]
+            else:
+                binary_buckets.pop(binary_bucket_index)
+
+        return binary_buckets
+
+
+    def get_palette(self, palette_name: str) -> dict:
+        '''
+        Returns a bokeh palette, corresponding to a given str palette name
+        '''
+
+        # Magma, Inferno, Plasma, Viridis, Cividis, Turbo
+        if palette_name == 'Magma':
+            return Magma
+        elif palette_name == 'Inferno':
+            return Inferno
+        elif palette_name == 'Plasma':
+            return Plasma
+        elif palette_name == 'Viridis':
+            return Viridis
+        elif palette_name == 'Cividis':
+            return Cividis
+        elif palette_name == 'Turbo':
+            return Turbo
+        elif palette_name == 'Category10':
+            return Category10
+        elif palette_name == 'Dark2':
+            return Dark2
+        else:
+            return Turbo
+    
 
     def collection_to_df(self, data: pd.DataFrame, palette_range: int, colorization_field: str) -> pd.DataFrame:
         # add coloration index column
@@ -299,6 +478,16 @@ class Processor():
         data_dict['mean_deviation'] = []
         data_dict['antislope'] = []
         data_dict['color_bucket'] = []
+
+        # BUCKETS
+        colorization_field = mappings.colorization_field[self.cfg.plot.colorization_value]
+        buckets_list, property_buckets = self.get_property_buckets(data, parameter = colorization_field, use_rounding = self.cfg.plot.property_rounding)
+
+        # [x] pour numbers into binary buckets
+        sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
+        sorted_buckets_list = sorted(buckets_list)
+        palette = self.get_palette(palette_name=self.cfg.plot.palette)
+        binary_buckets = self.get_buckets(sorted_buckets_list, sorted_property_buckets, palette)
 
 
         max_value = (data[colorization_field].max())
@@ -321,7 +510,7 @@ class Processor():
                 data_dict['antislope'].append(item['antislope'])
 
 
-                data_dict['color_bucket'].append(self.get_colour_bucket_index(item[colorization_field], max_value, palette_range))
+                data_dict['color_bucket'].append(self.get_colour_bucket_index(binary_buckets, data_dict['value']))
                 bar.next()
 
         data_df = pd.DataFrame(data_dict)
@@ -333,7 +522,7 @@ class Processor():
         # enchancing data
         palette_range = config.plot.palette_range
         colorization_field_config = config.plot.colorization_value
-        colorization_field = mappings.colorization_field[colorization_field_config]    
+        colorization_field = mappings.colorization_field[colorization_field_config]
         data_df = self.collection_to_df(data=data, palette_range=palette_range, colorization_field=colorization_field)
 
         return data_df

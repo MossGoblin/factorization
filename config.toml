@@ -20,7 +20,7 @@ data_file_name = 'composites.db'
 [set]
 # mode of number generation
 # options: family, range
-mode = 'family'
+mode = 'range'
 
 # family mode: generates a number of families; each family is based on a family product and a number of identity factors
 # list of families to be generated
@@ -53,7 +53,7 @@ include_primes = false
 
 # range minimum and maximum: first and last numbers to be included in the range
 range_min = 2
-range_max = 200000
+range_max = 1000
 
 ignore_missing_plot_values = true
 
@@ -89,3 +89,7 @@ palette_range = 11
     # anti slope
     # division family
 colorization_value = 'division family'
+
+# use rounding of property used for bucket assignment
+# options: full, up, down
+property_rounding = 'full'
