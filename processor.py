@@ -142,7 +142,7 @@ class Processor():
         tooltips.extend([
                     ('factors', '@prime_factors'),
                     ('mean factor value', '@ideal_factor'),
-                    ('mean factor deviation', '@mean_factor_deviation'),
+                    ('mean factor deviation', '@mean_deviation'),
                     ('antislope', '@antislope'),
                     ('division family', '@division_family')])
 
@@ -289,16 +289,6 @@ class Processor():
         factors_int_list = [int(value) for value in factors_str_list]
 
         return factors_int_list
-
-
-    def get_colour_bucket_index(self, binary_buckets: dict, value: int) -> int:
-        '''
-        Get the index of the binary bucket that a number in
-        '''
-        for index, numbers in binary_buckets.items():
-            for number in numbers:
-                if value == number.value:
-                    return str(index)
 
 
     def get_property_buckets(self, data: pd.DataFrame, parameter: str, use_rounding: str = 'full') -> (list[int], dict):
@@ -464,6 +454,20 @@ class Processor():
             return Turbo
     
 
+    def get_binary_buckets_map(self, binary_buckets):
+        bucket_map = {}
+        for index, numbers in binary_buckets.items():
+            for number in numbers:
+                bucket_map[number[0]] = index
+
+        return bucket_map
+
+
+    def get_colour_bucket_index_(self, binary_bucket_map, value):
+        index = binary_bucket_map[value]
+        return index
+
+
     def collection_to_df(self, data: pd.DataFrame, palette_range: int, colorization_field: str) -> pd.DataFrame:
         # add coloration index column
         rawdict = data.to_dict(orient='records')
@@ -479,6 +483,7 @@ class Processor():
         data_dict['antislope'] = []
         data_dict['color_bucket'] = []
 
+        # TODO OPTIMIZE BUCKETS
         # BUCKETS
         colorization_field = mappings.colorization_field[self.cfg.plot.colorization_value]
         buckets_list, property_buckets = self.get_property_buckets(data, parameter = colorization_field, use_rounding = self.cfg.plot.property_rounding)
@@ -488,6 +493,7 @@ class Processor():
         sorted_buckets_list = sorted(buckets_list)
         palette = self.get_palette(palette_name=self.cfg.plot.palette)
         binary_buckets = self.get_buckets(sorted_buckets_list, sorted_property_buckets, palette)
+        binary_buckets_map = self.get_binary_buckets_map(binary_buckets)
 
 
         max_value = (data[colorization_field].max())
@@ -509,8 +515,8 @@ class Processor():
                 data_dict['mean_deviation'].append(item['mean_deviation'])
                 data_dict['antislope'].append(item['antislope'])
 
-
-                data_dict['color_bucket'].append(self.get_colour_bucket_index(binary_buckets, data_dict['value']))
+                # TODO HERE OPTIMIZE BUCKET SEARCH
+                data_dict['color_bucket'].append(self.get_colour_bucket_index_(binary_buckets_map, item['value']))
                 bar.next()
 
         data_df = pd.DataFrame(data_dict)

@@ -32,7 +32,7 @@ identity_factor_mode = 'range'
 
 # range: the identity factors in a family are between identity_factor_range_min and identity_factor_range_max
 identity_factor_range_min = 2
-identity_factor_range_max = 100000
+identity_factor_range_max = 200000
 
 # type of identity factor minimum
 # options: origin, family, value
@@ -53,7 +53,7 @@ include_primes = false
 
 # range minimum and maximum: first and last numbers to be included in the range
 range_min = 2
-range_max = 1000
+range_max = 100000
 
 ignore_missing_plot_values = true
 
