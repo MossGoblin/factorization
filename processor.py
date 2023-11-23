@@ -67,24 +67,12 @@ class Processor():
                 self.logger.debug(
                     f'range [{self.cfg.set.range_min}..{self.cfg.set.range_max}]')
                 self.logger.debug(
-                    f'primes: {"included" if self.cfg.set.include_primes else "excluded"}]')
+                    f'[primes: {"included" if self.cfg.set.include_primes else "excluded"}]')
         else:
             self.logger.info('PLOT')
             self.logger.info(f'graph size: {self.cfg.plot.width}/{self.cfg.plot.height} x {self.cfg.plot.point_size}pt')
             self.logger.info(f'Y-axis: {self.cfg.plot.mode}')
             self.logger.debug(f'Colorization: {self.cfg.plot.use_color_buckets}')
-
-        self.logger.info('RUN')
-        self.logger.info(f'csv output: {self.cfg.run.create_csv}')
-        if self.cfg.run.hard_copy_timestamp_granularity == 0:
-            timestamp_format = 'days'
-        elif self.cfg.run.hard_copy_timestamp_granularity == 1:
-            timestamp_format = 'hours'
-        elif self.cfg.run.hard_copy_timestamp_granularity == 2:
-            timestamp_format = 'minutes'
-        else:
-            timestamp_format = 'full'
-        self.logger.debug(f'timestamp granularity: {timestamp_format}')
 
         self.logger.info('==============')
 
@@ -164,13 +152,14 @@ class Processor():
         value_list = self.generate_number_list()
         data_df = data_manager.load_data(value_list)
         if len(data_df) < len(value_list):
-            self.logger.error(f'Requested data is not in the db; {len(value_list) - len(data_df)} records missing')
-            end = datetime.utcnow()
-            self.logger.info(f'End at {end}')
-            self.logger.info(f'Total time: {end-self.cfg.local.start}')
+            if not self.cfg.set.ignore_missing_plot_values:
+                self.logger.error(f'Requested data is not in the db; {len(value_list) - len(data_df)} records missing')
+                end = datetime.utcnow()
+                self.logger.info(f'End at {end}')
+                self.logger.info(f'Total time: {end-self.cfg.local.start}')
 
-            self.stash_log_file('PLOT')
-            exit()
+                self.stash_log_file('PLOT')
+                exit()
 
         # TODO do we need filters before plotting ?
         # if config.filters.filter_data:
