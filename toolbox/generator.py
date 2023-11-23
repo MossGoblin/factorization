@@ -34,7 +34,8 @@ class Decomposer(Process):
                 new_record['ideal_factor'] = 0
                 new_record['prime_factors'] = []
                 new_record['mean_deviation'] = 0
-                new_record['anti_slope'] = 0
+                new_record['antislope'] = 0
+                new_record['division_family'] = 1
             else:
                 new_record['prime_factors'] = []
                 if new_record['is_prime']:
@@ -46,11 +47,13 @@ class Decomposer(Process):
                 new_record['mean_deviation'] = self.get_mean_deviation(
                     new_record['prime_factors'], new_record['ideal_factor'])
                 if new_record['mean_deviation'] > 0:
-                    new_record['anti_slope'] = new_record['value'] / new_record['mean_deviation']
+                    new_record['antislope'] = new_record['value'] / new_record['mean_deviation']
                 else:
-                    new_record['anti_slope'] = 0
+                    new_record['antislope'] = 0
+                new_record['division_family'] = math.prod(new_record['prime_factors'][:-1])
             updated_collection.append(new_record)
         self.queue.put(updated_collection)
+
 
 def decompose(logger, values_list):
     logger.info('Decomposing')

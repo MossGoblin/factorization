@@ -42,7 +42,8 @@ class Composite(Base):
     ideal_factor = Column("ideal_factor", Float)
     prime_factors = Column("prime_factors", String)
     mean_deviation = Column("mean_deviation", Float)
-    anti_slope = Column("anti_slope", Float)
+    antislope = Column("antislope", Float)
+    division_family = Column("division_family", Integer)
 
 # ,value,is_bb,full_path,dist,dist_to_bb,closest_vert_value,closest_vert,peak,peak_slope,odd_parent
 
@@ -52,7 +53,8 @@ class Composite(Base):
         self.ideal_factor = number_dict['ideal_factor']
         self.prime_factors = self.compile_prime_factor_string(number_dict['prime_factors'])
         self.mean_deviation = number_dict['mean_deviation']
-        self.anti_slope = number_dict['anti_slope']
+        self.antislope = number_dict['antislope']
+        self.division_family = number_dict['division_family']
 
     def compile_prime_factor_string(self, prime_factors: list) -> str:
         pf_string = ",".join([str(value) for value in prime_factors])

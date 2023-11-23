@@ -9,6 +9,7 @@ import pandas as pd
 import pyprimes as pp
 from progress.bar import Bar
 from pytoolbox.config_agent import ConfigAgent
+from pytoolbox.bokeh_agent import BokehScatterAgent
 
 import toolbox.mappings as mappings
 from toolbox import STASH_FOLDER
@@ -69,9 +70,9 @@ class Processor():
                     f'primes: {"included" if self.cfg.set.include_primes else "excluded"}]')
         else:
             self.logger.info('PLOT')
-            self.logger.info(f'graph size: {self.cfg.graph.width}/{self.cfg.graph.height} x {self.cfg.graph.point_size}pt')
-            self.logger.info(f'Y-axis: {self.cfg.graph.mode}')
-            self.logger.debug(f'Colorization: {self.cfg.graph.use_color_buckets}')
+            self.logger.info(f'graph size: {self.cfg.plot.width}/{self.cfg.plot.height} x {self.cfg.plot.point_size}pt')
+            self.logger.info(f'Y-axis: {self.cfg.plot.mode}')
+            self.logger.debug(f'Colorization: {self.cfg.plot.use_color_buckets}')
 
         self.logger.info('RUN')
         self.logger.info(f'csv output: {self.cfg.run.create_csv}')
@@ -84,18 +85,93 @@ class Processor():
         else:
             timestamp_format = 'full'
         self.logger.debug(f'timestamp granularity: {timestamp_format}')
-        self.logger.debug(
-            f'output folder reset: {self.cfg.run.reset_output_data}')
 
         self.logger.info('==============')
 
+    def get_graph_params(self, config: ConfigAgent, logger: Logger, project_title: str, html_filepath: str) -> dict:
+        plot_width = config.plot.width
+        plot_height = config.plot.height
+        palette = config.plot.palette
+        point_size = config.plot.point_size
+        colorization_field_config = config.plot.colorization_value
+        colorization_field = mappings.colorization_field[colorization_field_config]
+        y_axis = config.plot.mode
+
+        graph_params = {}
+        # TODO check for filters
+        # filter_text = ""
+        # if config.filters.filter_data:
+        #     filter_text = f" [ filter: {config.local.filter_name} ]"
+        graph_params['title'] = f'Composites: {mappings.y_axis_label[y_axis]} [ Color: {mappings.colorization_title_suffix[colorization_field]} ]'
+        graph_params['y_axis_label'] = mappings.y_axis_label[y_axis]
+        graph_params['width'] = plot_width
+        graph_params['height'] = plot_height
+        graph_params['palette'] = palette
+        graph_params['point_size'] = point_size
+        graph_params['x_axis'] = 'value'
+        graph_params['y_axis'] = mappings.y_axis_values[y_axis]
+        graph_params['output_file_title'] = project_title
+        graph_params['output_file_path'] = html_filepath
+
+        return graph_params
 
 
+    def get_color_factors(self, palette_range: int) -> list[str]:
+        factors_list = []
+        for index in range(palette_range):
+            factors_list.append(str(index))
+
+        return factors_list
+
+
+    def generate_plot(self, logger: Logger, config: ConfigAgent, data: pd.DataFrame, project_title: str, html_filepath: str):
+        plot = BokehScatterAgent()
+        plot.set_data(data)
+        logger.debug('Plot data set')
+
+        palette_range = config.plot.palette_range
+        config.add_parameter('local', 'plot_points', len(data))
+
+        graph_params = self.get_graph_params(config, logger, project_title, html_filepath)
+        plot.set_params(graph_params)
+        logger.debug('Graph params collated')
+
+        tooltips = [('number', '@value')]
+        if self.cfg.set.include_primes:
+            tooltips.append('is_prime', '@prime_factors')
+        tooltips.extend([
+                    ('factors', '@prime_factors'),
+                    ('mean factor value', '@ideal_factor'),
+                    ('mean factor deviation', '@mean_factor_deviation'),
+                    ('antislope', '@antislope'),
+                    ('division family', '@division_family')])
+
+        plot.set_tooltips(tooltips)
+        logger.debug('Tooltips set')
+
+        color_factors = self.get_color_factors(palette_range)
+        plot.set_color_factors(color_factors)
+        logger.debug('Color factors set')
+
+        plot.generate()
+        logger.info('Plot generated')
+
+        return plot
+    
 
     def get_data(self, logger: Logger, config: ConfigAgent, data_manager: DataManager) -> pd.DataFrame:
         logger.debug('Loading data from file')
         value_list = self.generate_number_list()
         data_df = data_manager.load_data(value_list)
+        if len(data_df) < len(value_list):
+            self.logger.error(f'Requested data is not in the db; {len(value_list) - len(data_df)} records missing')
+            end = datetime.utcnow()
+            self.logger.info(f'End at {end}')
+            self.logger.info(f'Total time: {end-self.cfg.local.start}')
+
+            self.stash_log_file('PLOT')
+            exit()
+
         # TODO do we need filters before plotting ?
         # if config.filters.filter_data:
         #      logger.info(f'Filtering data: {config.filters.filter_name}')
@@ -232,7 +308,7 @@ class Processor():
         data_dict['division_family'] = []
         data_dict['ideal_factor'] = []
         data_dict['mean_deviation'] = []
-        data_dict['anti_slope'] = []
+        data_dict['antislope'] = []
         data_dict['color_bucket'] = []
 
 
@@ -250,11 +326,10 @@ class Processor():
                 family_factors = prime_factors[:-1]
                 data_dict['small_factors'].append(family_factors)
                 data_dict['largest_factor'].append(prime_factors[-1])
-                # TODO see if division family is to be moved to the data
-                data_dict['division_family'].append(math.prod(family_factors))
+                data_dict['division_family'].append(item['division_family'])
                 data_dict['ideal_factor'].append(item['ideal_factor'])
                 data_dict['mean_deviation'].append(item['mean_deviation'])
-                data_dict['anti_slope'].append(item['anti_slope'])
+                data_dict['antislope'].append(item['antislope'])
 
 
                 data_dict['color_bucket'].append(self.get_colour_bucket_index(item[colorization_field], max_value, palette_range))
@@ -267,8 +342,8 @@ class Processor():
 
     def prepare_data(self, config: ConfigAgent, data: pd.DataFrame) -> pd.DataFrame:
         # enchancing data
-        palette_range = config.graph.palette_range
-        colorization_field_config = config.graph.colorization_value
+        palette_range = config.plot.palette_range
+        colorization_field_config = config.plot.colorization_value
         colorization_field = mappings.colorization_field[colorization_field_config]    
         data_df = self.collection_to_df(data=data, palette_range=palette_range, colorization_field=colorization_field)
 
@@ -281,6 +356,13 @@ class Processor():
         self.logger.info('Preparing data')
         data = self.prepare_data(self.cfg, data)
 
+        # plot data
+        html_filepath = self.cfg.local.html_filepath
+        project_title = self.cfg.local.project_title
+        plot = self.generate_plot(self.logger, self.cfg, data, project_title, html_filepath)
+
+        plot.display_plot()
+        self.logger.info('Displaying plot')
 
     def run(self):
         self.logger.info(f'Start at {self.cfg.local.start}')
@@ -288,13 +370,14 @@ class Processor():
         mode = self.cfg.mode.mode
         if mode == 'generate':
             self.generate()
+            logger_filename_prefix = 'GEN'
         else:
             self.plot()
+            logger_filename_prefix = 'PLOT'
 
         end = datetime.utcnow()
         self.logger.info(f'End at {end}')
         self.logger.info(f'Total time: {end-self.cfg.local.start}')
 
-        logger_filename_prefix = 'GEN'
-        # HERE
         self.stash_log_file(logger_filename_prefix)
+        # TODO Stash html

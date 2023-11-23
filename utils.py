@@ -13,7 +13,7 @@ class Number():
             self.ideal_factor = 0
             self.prime_factors = []
             self.mean_deviation = 0
-            self.anti_slope = 0
+            self.antislope = 0
         else:
             self.prime_factors = []
             if self.is_prime:
@@ -25,9 +25,9 @@ class Number():
             self.mean_deviation = self.get_mean_deviation(
                 self.prime_factors, self.ideal_factor)
             if self.mean_deviation > 0:
-                self.anti_slope = self.value / self.mean_deviation
+                self.antislope = self.value / self.mean_deviation
             else:
-                self.anti_slope = 0
+                self.antislope = 0
 
     def __str__(self):
         str = f'value: {self.value} :: '
@@ -35,7 +35,7 @@ class Number():
             f':: factors: [{self.prime_factors[:-1]}] {self.prime_factors[-1]}'
         str = str + f' > ideal factor: {self.ideal_factor}'
         str = str + f' > mean deviation: {self.mean_deviation}'
-        str = str + f' > antislope: {self.anti_slope}'
+        str = str + f' > antislope: {self.antislope}'
         return str
 
     def __repr__(self):

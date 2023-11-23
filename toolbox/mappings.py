@@ -5,9 +5,9 @@ graph_title = {
 }
 
 y_axis_values = {
-    "mean_deviation": "deviation",
-    "antislope": "one_over_slope",
-    "ideal_factor": "ideal"
+    "mean_deviation": "mean_deviation",
+    "antislope": "antislope",
+    "ideal_factor": "ideal_factor"
 }
 
 y_axis_label = {
@@ -26,6 +26,14 @@ colorization_field = {
     "value": "value",
     "ideal factor": "ideal_factor",
     "mean deviation": "mean_deviation",
-    "alti slope": "alti_slope",
-    # "division family": "division_family"
+    "anti slope": "antislope",
+    "division family": "division_family"
+}
+
+colorization_title_suffix = {
+    "value": "Value",
+    "ideal_factor": "Ideal factor",
+    "mean_deviation": "Mean factor deviation",
+    "antislope": "Antislope",
+    "division_family": "Division family"
 }
