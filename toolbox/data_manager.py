@@ -107,19 +107,10 @@ class DataManager():
         session.add_all(values)
         session.commit()
 
-        # Record by record version
-        # with Bar('Adding records to db', max=len(data_list)) as bar:
-        #     for record in data_list:
-        #         new_number = Composite(record)
-        #         session.merge(new_number)
-        #         new_value = Value(record['value'])
-        #         session.merge(new_value)
-        #         bar.next()
-        # session.commit()
-
 
     def load_data(self, value_list):
         '''Loads data, clamped with lowerbound and upperbound'''
+        # TODO read in batches and combine
         raw_df = pd.read_sql(self.session.query(Composite).filter(Composite.value.in_(value_list)).statement, self.session.bind)
         return raw_df
 

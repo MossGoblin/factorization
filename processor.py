@@ -1,32 +1,23 @@
+import math
 import os
 import shutil
 from datetime import datetime
+from functools import reduce
 from logging import Logger
 
 import numpy as np
-import math
 import pandas as pd
 import pyprimes as pp
+from bokeh.palettes import (Category10, Cividis, Dark2, Inferno, Magma, Plasma,
+                            Turbo, Viridis)
 from progress.bar import Bar
-from pytoolbox.config_agent import ConfigAgent
 from pytoolbox.bokeh_agent import BokehScatterAgent
+from pytoolbox.config_agent import ConfigAgent
 
 import toolbox.mappings as mappings
 from toolbox import STASH_FOLDER
 from toolbox.data_manager import DataManager
 from toolbox.generator import decompose
-
-import collections
-from bokeh.palettes import (
-    Category10,
-    Cividis,
-    Dark2,
-    Inferno,
-    Magma,
-    Plasma,
-    Turbo,
-    Viridis,
-)
 
 
 class Processor():
@@ -146,11 +137,12 @@ class Processor():
                     ('antislope', '@antislope'),
                     ('division family', '@division_family')])
 
+        color_factors = self.get_color_factors(palette_range)
+        plot.set_color_factors(color_factors)
+
         plot.set_tooltips(tooltips)
         logger.debug('Tooltips set')
 
-        color_factors = self.get_color_factors(palette_range)
-        plot.set_color_factors(color_factors)
         logger.debug('Color factors set')
 
         plot.generate()
@@ -180,8 +172,6 @@ class Processor():
         #      config.add_parameter('local', 'filter_name', config.filters.filter_name)
 
         return data_df
-
-
 
     def generate_number_list(self):
         self.logger.info('Generating values')
@@ -268,11 +258,11 @@ class Processor():
             else:
                 number_list = [value for value in number_list if value not in existing_data['value'].tolist()]
                 if starting_value_count > len(number_list):
-                    self.logger.debug(f'Some records found in the db; proceeding with {len(number_list)} values')
+                    self.logger.debug(f'{starting_value_count - len(number_list)} record(s) found in the db; proceeding with {len(number_list)} values')
                 else:
                     self.logger.debug('All values are new; proceeding with values')
         except Exception as e:
-            self.logger.debug(f'Could not load existing data records : {e}')
+            self.logger.debug('Could not load existing data records')
             self.logger.debug('Proceeding with all values')
         if terminate:
             exit()
@@ -289,36 +279,6 @@ class Processor():
         factors_int_list = [int(value) for value in factors_str_list]
 
         return factors_int_list
-
-
-    def get_property_buckets(self, data: pd.DataFrame, parameter: str, use_rounding: str = 'full') -> (list[int], dict):
-        '''
-        Split numbers into buckets, based in the provided parameter
-        '''
-        buckets_list = []
-        param_buckets = {}
-        for index, number in data.iterrows():
-            if number['is_prime'] and not self.cfg.set.include_primes:
-                continue
-            else:
-                try:
-                    property = number[parameter]
-                except:
-                    raise Exception
-
-                if use_rounding == 'full':
-                    property = round(property)
-                elif use_rounding == 'down':
-                    property = math.floor(property)
-                elif use_rounding == 'up':
-                    property = math.ceil(property)
-
-                if property not in buckets_list:
-                    buckets_list.append(property)
-                    param_buckets[property] = []
-                param_buckets[property].append(number)
-
-        return buckets_list, param_buckets
 
 
     def get_max_sum(self, limit: int, base: int):
@@ -357,23 +317,6 @@ class Processor():
         return count
 
 
-    def get_power_of_n(self, value: int, base: int):
-        '''
-        Get the lowest power of a base that's equal or higher than the provided number
-        '''
-
-        if value == 1:
-            return 1
-
-        counter = 0
-        intermediate_product = 1
-        while intermediate_product < value:
-            intermediate_product += base**counter
-            counter += 1
-
-        return counter
-
-
     def filter_property_buckets(self, sorted_property_buckets: dict, cut_off_value: int):
         trimmed_property_buckets = {}
         for index, item in sorted_property_buckets.items():
@@ -388,44 +331,6 @@ class Processor():
             counter += 1
 
         return filtered_property_buckets, trimmed_property_buckets
-
-
-    def get_buckets(self, sorted_buckets_list: list, sorted_property_buckets: dict, palette) -> dict:
-        '''
-        Split numbers into buckets by a given property
-
-        The first bucket contains numbers with one property value
-        The next bucket contains X times more property values than the previous one
-        X is determined so that the palette can cover all property values
-        '''
-
-        global palette_color_range
-
-        number_of_unassigned_buckets = len(sorted_buckets_list)
-        palette_color_range = self.get_number_of_colors_in_palette(palette=palette)
-        bucket_base = self.get_bucket_base(palette_color_range, number_of_unassigned_buckets)
-        self.logger.info(f'Buckets to be distributed: {number_of_unassigned_buckets}')
-        self.logger.info(f'Base chosen: {bucket_base}')
-        number_of_binary_buckets = self.get_power_of_n(number_of_unassigned_buckets, base=bucket_base)
-
-        # create binary bucket index map
-        binary_bucket_index_map = {}
-        binary_buckets = {}
-
-        for counter in range(number_of_binary_buckets + 1):
-            bucket_count = pow(bucket_base, counter)
-            binary_bucket_index = counter
-            binary_buckets[binary_bucket_index] = []
-            filtered_property_bucket, sorted_property_buckets = self.filter_property_buckets(sorted_property_buckets, bucket_count)
-            if len(filtered_property_bucket) > 0:
-                binary_buckets[binary_bucket_index].extend(filtered_property_bucket)
-                binary_bucket_index_map[binary_bucket_index] = []
-                binary_bucket_index_map[binary_bucket_index].extend(sorted_buckets_list[:bucket_count])
-                sorted_buckets_list = sorted_buckets_list[bucket_count:]
-            else:
-                binary_buckets.pop(binary_bucket_index)
-
-        return binary_buckets
 
 
     def get_palette(self, palette_name: str) -> dict:
@@ -456,16 +361,86 @@ class Processor():
 
     def get_binary_buckets_map(self, binary_buckets):
         bucket_map = {}
-        for index, numbers in binary_buckets.items():
-            for number in numbers:
-                bucket_map[number[0]] = index
+        step_start = datetime.utcnow()
 
+        with Bar('Assigning binary buckets', max=len(binary_buckets)) as bar:
+            for index, numbers in binary_buckets.items():
+                bar.next()
+                for number in numbers:
+                    bucket_map[number[0]] = index
+
+        step_end = datetime.utcnow()
+        self.logger.debug(f'...done in {step_end-step_start}')
         return bucket_map
 
 
-    def get_colour_bucket_index_(self, binary_bucket_map, value):
-        index = binary_bucket_map[value]
-        return index
+    def get_property_buckets(self, data: pd.DataFrame, parameter: str, use_rounding: bool) -> list:
+        """Compile a list of all unique values, determined by a given number parameter
+
+        Parameters
+        ----------
+        data : pd.DataFrame
+            dtaframe, comtaining all numbers
+        parameter : str
+            name of the parameter that will be used for colorization
+        use_rounding : bool
+            whether the color buckets should be based on rounded versions of the colorization parameter
+
+        Returns
+        -------
+        list:
+            a list of all unique values of the given number parameter
+
+        """
+        step_start = datetime.utcnow()
+        if use_rounding == 'down':
+            data[parameter] = data[parameter].apply(lambda value: math.floor(value))
+        elif use_rounding == 'up':
+            data[parameter] = data[parameter].apply(lambda value: math.ceil(value))
+        
+        buckets_list = data[parameter].tolist()
+        buckets_list = reduce(lambda l, x: l.append(x) or l if x not in l else l, buckets_list, [])
+        step_end = datetime.utcnow()
+        self.logger.debug(f'...done in {step_end-step_start}')
+        sorted_buckets_list = sorted(buckets_list)
+        sorted_buckets_list.reverse()
+
+        return sorted_buckets_list
+
+
+    def get_buckets(self, sorted_buckets_list: list, palette) -> dict:
+        '''
+        Split numbers into buckets by a given property
+
+        The first bucket contains numbers with one property value
+        The next bucket contains X times more property values than the previous one
+        X is determined so that the palette can cover all property values
+        '''
+
+        step_start = datetime.utcnow()
+        global palette_color_range
+
+        number_of_unassigned_buckets = len(sorted_buckets_list)
+        palette_color_range = self.get_number_of_colors_in_palette(palette=palette)
+        bucket_base = self.get_bucket_base(palette_color_range, number_of_unassigned_buckets)
+        self.logger.info(f'Buckets to be distributed: {number_of_unassigned_buckets}')
+        self.logger.info(f'Base chosen: {bucket_base}')
+
+        binary_bucket_index_map = {}
+        binary_bucket_index = 0
+        bucket_size = pow(bucket_base, binary_bucket_index)
+        for counter in range(len(sorted_buckets_list)):
+            next_value = sorted_buckets_list.pop()
+            binary_bucket_index_map[next_value] = binary_bucket_index
+            
+            bucket_size -= 1
+            if bucket_size == 0:
+                binary_bucket_index += 1
+                bucket_size = pow(bucket_base, binary_bucket_index)
+        
+        step_end = datetime.utcnow()
+        self.logger.debug(f'...done in {step_end-step_start}')
+        return binary_bucket_index_map
 
 
     def collection_to_df(self, data: pd.DataFrame, palette_range: int, colorization_field: str) -> pd.DataFrame:
@@ -482,18 +457,13 @@ class Processor():
         data_dict['mean_deviation'] = []
         data_dict['antislope'] = []
         data_dict['color_bucket'] = []
-
-        # TODO OPTIMIZE BUCKETS
-        # BUCKETS
+        
         colorization_field = mappings.colorization_field[self.cfg.plot.colorization_value]
-        buckets_list, property_buckets = self.get_property_buckets(data, parameter = colorization_field, use_rounding = self.cfg.plot.property_rounding)
-
-        # [x] pour numbers into binary buckets
-        sorted_property_buckets = collections.OrderedDict(sorted(property_buckets.items()))
-        sorted_buckets_list = sorted(buckets_list)
+        # organize numbers by colorization property
+        sorted_buckets_list = self.get_property_buckets(data, parameter=colorization_field, use_rounding=self.cfg.plot.property_rounding)
         palette = self.get_palette(palette_name=self.cfg.plot.palette)
-        binary_buckets = self.get_buckets(sorted_buckets_list, sorted_property_buckets, palette)
-        binary_buckets_map = self.get_binary_buckets_map(binary_buckets)
+        binary_buckets = self.get_buckets(sorted_buckets_list, palette)
+
 
 
         max_value = (data[colorization_field].max())
@@ -514,9 +484,7 @@ class Processor():
                 data_dict['ideal_factor'].append(item['ideal_factor'])
                 data_dict['mean_deviation'].append(item['mean_deviation'])
                 data_dict['antislope'].append(item['antislope'])
-
-                # TODO HERE OPTIMIZE BUCKET SEARCH
-                data_dict['color_bucket'].append(self.get_colour_bucket_index_(binary_buckets_map, item['value']))
+                data_dict['color_bucket'].append(str(binary_buckets[item[colorization_field]]))
                 bar.next()
 
         data_df = pd.DataFrame(data_dict)

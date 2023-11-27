@@ -1,1 +1,4 @@
 - [x] Add division family to data
+- [ ] Refactor config
+    - [ ] Split into GEN and PLOT
+    - [ ] Split range and families into subsections
