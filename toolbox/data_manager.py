@@ -1,3 +1,5 @@
+import math
+from sqlite3 import OperationalError
 import pandas as pd
 from progress.bar import Bar
 from sqlalchemy import Boolean, Column, Float, Integer, String, create_engine
@@ -108,16 +110,44 @@ class DataManager():
         session.commit()
 
 
+    def split_value_list(self, value_list, limit):
+        cutoff_divisor = math.ceil(len(value_list)/limit)
+        cutoff = int(len(value_list)/cutoff_divisor)
+        value_batches = [value_list[:cutoff], value_list[cutoff:]]
+        return value_batches
+
+
     def load_data(self, value_list):
-        '''Loads data, clamped with lowerbound and upperbound'''
-        # TODO read in batches and combine
-        raw_df = pd.read_sql(self.session.query(Composite).filter(Composite.value.in_(value_list)).statement, self.session.bind)
+        '''Loads raw data, corresponding to a list of int values'''
+        limit = 200000
+        if len(value_list) > limit:
+            data_batches = []
+            value_list_batches = self.split_value_list(value_list, limit)
+            for counter in range(len(value_list_batches)):
+                values_batch = value_list_batches.pop()
+                data_batch = pd.read_sql(self.session.query(Composite).filter(Composite.value.in_(values_batch)).statement, self.session.bind)
+                data_batches.append(data_batch)
+            raw_df = pd.concat(data_batches)
+        else:
+            raw_df = pd.read_sql(self.session.query(Composite).filter(Composite.value.in_(value_list)).statement, self.session.bind)
+
         return raw_df
 
 
     def load_value_data(self, value_list):
-        '''Loads data, clamped with lowerbound and upperbound'''
-        raw_df = pd.read_sql(self.session.query(Value).filter(Value.value.in_(value_list)).statement, self.session.bind)
+        '''Loads value data, corresponding to a list of int values'''
+        limit = 200000
+        if len(value_list) > limit:
+            data_batches = []
+            value_list_batches = self.split_value_list(value_list, limit)
+            for counter in range(len(value_list_batches)):
+                values_batch = value_list_batches.pop()
+                data_batch = pd.read_sql(self.session.query(Value).filter(Value.value.in_(values_batch)).statement, self.session.bind)
+                data_batches.append(data_batch)
+            raw_df = pd.concat(data_batches)
+        else:
+            raw_df = pd.read_sql(self.session.query(Value).filter(Value.value.in_(value_list)).statement, self.session.bind)
+
         return raw_df
 
 
