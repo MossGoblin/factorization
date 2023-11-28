@@ -174,13 +174,13 @@ class Processor():
         return data_df
 
     def generate_number_list(self):
-        self.logger.info('Generating values')
+        self.logger.info('Generating values list')
         step_start = datetime.utcnow()
         if self.cfg.set.mode == 'family':
-            self.logger.debug('Processing families')
+            self.logger.debug('..from families')
             number_list = self.generate_number_families()
         elif self.cfg.set.mode == 'range':
-            self.logger.debug('Processing range')
+            self.logger.debug('..from range')
             number_list = self.generate_continuous_number_list()
         step_end = datetime.utcnow()
         self.logger.debug(f'...done in {step_end-step_start}')
@@ -374,7 +374,7 @@ class Processor():
         return bucket_map
 
 
-    def get_property_buckets(self, data: pd.DataFrame, parameter: str, use_rounding: bool) -> list:
+    def get_sorted_property_uniques_list(self, data: pd.DataFrame, parameter: str, use_rounding: bool) -> list:
         """Compile a list of all unique values, determined by a given number parameter
 
         Parameters
@@ -398,14 +398,14 @@ class Processor():
         elif use_rounding == 'up':
             data[parameter] = data[parameter].apply(lambda value: math.ceil(value))
         
-        buckets_list = data[parameter].tolist()
-        buckets_list = reduce(lambda l, x: l.append(x) or l if x not in l else l, buckets_list, [])
+        uniques_list = data[parameter].tolist()
+        uniques_list = reduce(lambda lst, x: lst.append(x) or lst if x not in lst else lst, uniques_list, [])
         step_end = datetime.utcnow()
         self.logger.debug(f'...done in {step_end-step_start}')
-        sorted_buckets_list = sorted(buckets_list)
-        sorted_buckets_list.reverse()
+        sorted_uniques_list = sorted(uniques_list)
+        sorted_uniques_list.reverse()
 
-        return sorted_buckets_list
+        return sorted_uniques_list
 
 
     def get_buckets(self, sorted_buckets_list: list, palette) -> dict:
@@ -423,7 +423,7 @@ class Processor():
         number_of_unassigned_buckets = len(sorted_buckets_list)
         palette_color_range = self.get_number_of_colors_in_palette(palette=palette)
         bucket_base = self.get_bucket_base(palette_color_range, number_of_unassigned_buckets)
-        self.logger.info(f'Buckets to be distributed: {number_of_unassigned_buckets}')
+        self.logger.info(f'Colorization values to be distributed: {number_of_unassigned_buckets}')
         self.logger.info(f'Base chosen: {bucket_base}')
 
         binary_bucket_index_map = {}
@@ -460,9 +460,9 @@ class Processor():
         
         colorization_field = mappings.colorization_field[self.cfg.plot.colorization_value]
         # organize numbers by colorization property
-        sorted_buckets_list = self.get_property_buckets(data, parameter=colorization_field, use_rounding=self.cfg.plot.property_rounding)
+        sorted_property_uniques_list = self.get_sorted_property_uniques_list(data, parameter=colorization_field, use_rounding=self.cfg.plot.property_rounding)
         palette = self.get_palette(palette_name=self.cfg.plot.palette)
-        binary_buckets = self.get_buckets(sorted_buckets_list, palette)
+        binary_buckets = self.get_buckets(sorted_property_uniques_list, palette)
 
 
 

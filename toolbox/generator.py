@@ -17,6 +17,8 @@ class Decomposer(Process):
         return math.pow(value, 1/len(prime_factors))
 
     def get_mean_deviation(self, prime_factors: list[int], ideal_factor: float) -> float:
+        if all(x == prime_factors[0] for x in prime_factors):
+            return 0.0
         deviations_sum = 0
         for prime_factor in prime_factors:
             deviations_sum += abs(prime_factor - ideal_factor)
